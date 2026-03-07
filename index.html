@@ -1,0 +1,2688 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stratejist Pro - Detaylı Analiz</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13 10V3L4 14h7v7l9-11h-7z'/%3E%3C/svg%3E">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            /* yumuşak mavi-gri arka plan */
+            background-color: #eef2f7;
+        }
+
+        .idea-card {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            /* biraz daha yumuşak sınır */
+            border-radius: 2rem;
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            height: fit-content;
+            position: relative;
+        }
+
+        .idea-card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            border-color: #3b82f6;
+        }
+
+        .misaligned-card {
+            background-color: #f5f3ff;
+            /* light purple */
+            border-color: #8b5cf6;
+            /* purple */
+        }
+
+        .box-section {
+            padding: 1rem;
+            border-radius: 1.25rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            background: #ecfccb;
+            /* pastel yeşil kutu */
+        }
+
+        .box-extra {
+            background: #fff7ed;
+            /* pastel turuncu-krem kutu */
+            border: 1px solid #ffedd5;
+            animation: popIn 0.3s ease-out;
+            position: relative;
+            overflow: hidden;
+            margin-top: 0.75rem;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .animate-pop {
+            animation: popIn 0.4s ease-out forwards;
+        }
+
+        .relevance-badge {
+            background: #eff6ff;
+            color: #1d4ed8;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 800;
+            border: 1px solid #dbeafe;
+        }
+
+        #chartContainer {
+            display: none;
+            background: #eff6ff;
+            /* hafif mavi arka plan */
+            padding: 2rem;
+            border-radius: 2rem;
+            margin-top: 2rem;
+        }
+
+        #scoreChart {
+            background: #f9fafb;
+            /* sütun grafiği için açık gri beyaz */
+        }
+
+        /* Yazdırma / PDF Ayarları */
+        @media print {
+            body {
+                background: white !important;
+                margin: 0;
+                padding: 0;
+            }
+
+            .no-print,
+            header,
+            .mb-10,
+            button,
+            textarea,
+            input,
+            .action-area,
+            .ai-ask-box,
+            .bg-slate-50.p-4.text-center {
+                display: none !important;
+            }
+
+            .idea-card {
+                break-inside: avoid;
+                border: 1px solid #e2e8f0 !important;
+                box-shadow: none !important;
+                margin-bottom: 2rem;
+                width: 100% !important;
+                display: block !important;
+            }
+
+            #rankingSection {
+                margin-top: 3rem;
+                display: block !important;
+                border: 1px solid #e2e8f0;
+                break-inside: avoid;
+            }
+
+            #chartContainer {
+                display: block !important;
+                break-inside: avoid;
+            }
+        }
+
+        /* Yükleniyor Ekranı */
+        #loadingOverlay {
+            backdrop-filter: blur(5px);
+        }
+
+        .thinking-text {
+            background: linear-gradient(to right, #2563eb, #1e293b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+
+<body class="antialiased text-slate-900 pb-20">
+
+    <header class="bg-white border-b border-slate-200 py-4 px-6 sticky top-0 z-50 shadow-sm no-print">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg text-white shadow-lg shadow-blue-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <h1 class="text-lg font-black tracking-tighter uppercase">Stratejist<span
+                        class="text-blue-600">Pro</span></h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <button onclick="toggleLanguageMenu()"
+                        class="text-slate-400 hover:text-blue-600 transition-colors p-2 rounded-full hover:bg-slate-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                    <div id="languageMenu"
+                        class="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-slate-100 hidden z-50 overflow-hidden animate-pop">
+                        <button id="btn-lang-tr" onclick="setLanguage('tr'); toggleLanguageMenu()"
+                            class="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2">
+                            <span>🇹🇷</span> Türkçe
+                        </button>
+                        <button id="btn-lang-en" onclick="setLanguage('en'); toggleLanguageMenu()"
+                            class="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2">
+                            <span>🇬🇧</span> English
+                        </button>
+                        <button id="btn-lang-de" onclick="setLanguage('de'); toggleLanguageMenu()"
+                            class="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2">
+                            <span>🇩🇪</span> Deutsch
+                        </button>
+                        <button id="btn-lang-es" onclick="setLanguage('es'); toggleLanguageMenu()"
+                            class="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2">
+                            <span>🇪🇸</span> Español
+                        </button>
+                        <button id="btn-lang-fr" onclick="setLanguage('fr'); toggleLanguageMenu()"
+                            class="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2">
+                            <span>🇫🇷</span> Français
+                        </button>
+                    </div>
+                </div>
+                <button onclick="openSettings()" data-translate-key="apiSettings"
+                    class="text-[10px] font-bold text-slate-500 hover:text-blue-600 uppercase tracking-widest transition-colors">
+                    ⚙️ API Ayarları
+                </button>
+                <button id="logoutBtn" onclick="handleLogout()" data-translate-key="logout"
+                    class="hidden text-[10px] font-bold text-rose-500 hover:text-rose-700 uppercase tracking-widest transition-colors">
+                    ÇIKIŞ YAP
+                </button>
+                <button onclick="confirmAndPrint()" data-translate-key="saveAsPdf"
+                    class="bg-slate-800 text-white text-[10px] font-bold px-4 py-2 rounded-lg hover:bg-black transition-all flex items-center gap-2">
+                    PDF OLARAK KAYDET
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-8">
+        <!-- Giriş Alanı -->
+        <div class="mb-10 no-print">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                <div class="mb-6">
+                    <h2 data-translate-key="groupPurpose"
+                        class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        🎯 Grup Amacı
+                    </h2>
+                    <input type="text" id="groupPurpose" data-translate-key="groupPurposePlaceholder"
+                        class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-blue-500 text-sm font-bold transition-all"
+                        placeholder="Bu grubun temel hedefi nedir? (Örn: Verimlilik Artışı)">
+                </div>
+
+                <div class="flex justify-between items-center mb-4">
+                    <h2 data-translate-key="ideas" class="text-sm font-black text-slate-400 uppercase tracking-widest">
+                        💡 Fikirler</h2>
+                </div>
+
+                <div id="inputContainer" class="space-y-3 mb-6">
+                    <div
+                        class="flex flex-col md:flex-row gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 relative group">
+                        <div class="flex-grow space-y-2">
+                            <input type="text"
+                                class="idea-input w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500"
+                                data-translate-key="ideaTitlePlaceholder" placeholder="Fikir Başlığı...">
+                            <textarea data-translate-key="ideaNotePlaceholder"
+                                class="note-input w-full p-3 border border-slate-200 rounded-xl outline-none text-xs font-medium h-16 resize-none focus:border-blue-500"
+                                placeholder="Kısa açıklama..."></textarea>
+                        </div>
+                        <button onclick="removeInputDiv(this)"
+                            class="p-2 text-slate-300 hover:text-rose-500 no-print self-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button id="addIdeaBtn" onclick="addInput()" data-translate-key="addIdea"
+                        class="px-6 py-4 border-2 border-dashed border-slate-200 hover:border-blue-400 text-slate-500 hover:text-blue-600 font-bold rounded-2xl transition-all flex-grow md:flex-grow-0">
+                        + Yeni Fikir
+                    </button>
+                    <button id="startAnalysisBtn" onclick="processAndGenerate()" data-translate-key="startAnalysis"
+                        class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-200 flex-grow">
+                        Analizi Başlat
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sonuçlar Alanı -->
+        <div id="resultsContainer" class="space-y-12 mb-12">
+            <div id="placeholder" data-translate-key="placeholderText"
+                class="py-20 text-center opacity-30 italic font-bold text-slate-400">
+                Fikirlerinizi girerek analizi başlatın...
+            </div>
+        </div>
+
+        <!-- Kesinleşmiş Sıralama Bölümü -->
+        <div id="rankingSection" class="hidden animate-pop mb-12">
+            <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+                <div class="bg-slate-900 p-6 text-center">
+                    <h2 data-translate-key="finalRanking"
+                        class="text-white font-black uppercase tracking-tighter text-xl italic">📊 Kesinleşmiş Sıralama
+                    </h2>
+                    <p id="purposeDisplay" class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">
+                    </p>
+                </div>
+                <div class="p-2 overflow-x-auto">
+                    <table class="w-full text-left min-w-[800px]">
+                        <thead>
+                            <tr class="border-b border-slate-100">
+                                <th data-translate-key="rank"
+                                    class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-12">
+                                    Sıra</th>
+                                <th data-translate-key="ideaAndOutput"
+                                    class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-48">
+                                    Fikir & Analiz Çıktısı</th>
+                                <th data-translate-key="aiScore"
+                                    class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                                    Yapay Zeka Puanı</th>
+                                <th data-translate-key="userAction"
+                                    class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center no-print">
+                                    Kullanıcı İşlemi</th>
+                                <th data-translate-key="userScore"
+                                    class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
+                                    Kullanıcı Puanı</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rankingTableBody">
+                            <!-- JS ile doldurulacak -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-slate-50 p-4 text-center no-print border-t border-slate-100 flex justify-center gap-4">
+                    <button onclick="resortTable('ai')" data-translate-key="sortByAi"
+                        class="text-[10px] font-black text-blue-600 uppercase hover:underline">Yapay Zeka Puanına Göre
+                        Sırala</button>
+                    <button onclick="resortTable('manual')" data-translate-key="sortByUser"
+                        class="text-[10px] font-black text-slate-500 uppercase hover:underline">Kullanıcı Puanına Göre
+                        Sırala</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grafik Alanı (Sadece PDF ve Analiz Sonrası) -->
+        <div id="chartContainer" class="animate-pop">
+            <h2 data-translate-key="chartTitle"
+                class="text-sm font-black text-slate-400 uppercase tracking-widest mb-6 text-center">📈 Puan
+                Karşılaştırma Grafiği</h2>
+            <canvas id="scoreChart" height="150"></canvas>
+        </div>
+
+        <!-- Özel Onay Modalı -->
+        <div id="confirmModal" class="fixed inset-0 bg-black/50 z-[100] hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-pop text-center">
+                <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <h3 data-translate-key="confirmPdfTitle" class="text-lg font-black text-slate-800 mb-2">PDF Oluşturulsun
+                    mu?</h3>
+                <p data-translate-key="confirmPdfBody" class="text-sm text-slate-500 mb-6">Analiz raporunuz, puan
+                    tablonuz ve karşılaştırma grafiğiniz PDF
+                    olarak hazırlanacaktır.</p>
+                <div class="flex gap-3">
+                    <button onclick="closeModal()" data-translate-key="cancel"
+                        class="flex-1 py-3 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">İptal</button>
+                    <button onclick="executePrint()" data-translate-key="confirmSave"
+                        class="flex-1 py-3 px-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">Evet,
+                        Kaydet</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Ayarları Modalı -->
+        <div id="settingsModal" class="fixed inset-0 bg-black/50 z-[100] hidden flex items-center justify-center p-4">
+            <div class="glass-panel rounded-3xl p-8 max-w-md w-full shadow-2xl animate-pop">
+                <h3 data-translate-key="geminiApiSettings" class="text-lg font-black text-slate-800 mb-4">Gemini API
+                    Ayarları</h3>
+                <p data-translate-key="geminiApiDescription" class="text-xs text-slate-500 mb-4">Gerçek zamanlı Gemini
+                    2.5 Pro (veya 1.5 Pro) analizleri için
+                    Google API anahtarınızı giriniz. Anahtarınız sadece tarayıcınızda saklanır.</p>
+                <input type="password" id="apiKeyInput" data-translate-key="apiKeyInput"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500 mb-4"
+                    placeholder="AIzaSy...">
+                <div class="flex gap-3">
+                    <button onclick="closeSettings()" data-translate-key="cancel"
+                        class="flex-1 py-3 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">İptal</button>
+                    <button onclick="saveSettings()" data-translate-key="save"
+                        class="flex-1 py-3 px-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">Kaydet</button>
+                </div>
+                <p data-translate-key="simulationMode" class="text-[10px] text-slate-400 mt-4 text-center">Anahtar
+                    girilmezse sistem simülasyon modunda
+                    çalışır.</p>
+            </div>
+        </div>
+
+        <!-- Analiz sonrası hızlı fikir ekle butonu (sağ alt) -->
+        <button id="addAfterBtn" onclick="addIdeaAfterAnalysis()" data-translate-key="addIdeaAndAnalyze"
+            class="fixed right-6 bottom-6 bg-emerald-600 text-white px-4 py-3 rounded-full shadow-lg no-print hidden">+
+            Fikir Ekle & Analiz Et</button>
+        <!-- sol alt geri al düğmesi (uyumlu sarı ton) -->
+        <button id="undoBtn" onclick="undoLast()" data-translate-key="undo"
+            class="fixed left-6 bottom-20 bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-3 rounded-full shadow-lg no-print">Geri
+            Al</button>
+        <!-- sol alt sıfırla düğmesi -->
+        <button id="resetBtn" onclick="resetAll()" data-translate-key="reset"
+            class="fixed left-6 bottom-6 bg-red-600 text-white px-4 py-3 rounded-full shadow-lg no-print">Herşeyi
+            Sıfırla</button>
+    </main>
+
+    <!-- API Key Uyarısı Banner -->
+    <div id="apiKeyBanner" class="fixed top-24 left-1/2 transform -translate-x-1/2 z-[90] hidden">
+        <div
+            class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-6 py-3 rounded-full shadow-xl flex items-center gap-3 animate-pop">
+            <span class="text-xs font-bold">⚠️ Lütfen API key giriniz. Oluşturmak için <a
+                    href="https://aistudio.google.com/welcome" target="_blank"
+                    class="underline text-yellow-900 hover:text-yellow-700">buraya tıklayınız</a>.</span>
+            <button onclick="document.getElementById('apiKeyBanner').classList.add('hidden')"
+                class="text-yellow-500 hover:text-yellow-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Auth Modalı -->
+    <div id="authModal" class="fixed inset-0 bg-slate-100 z-[200] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-pop text-center">
+            <div class="flex items-center gap-3 justify-center mb-6">
+                <div class="bg-blue-600 p-2 rounded-lg text-white shadow-lg shadow-blue-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <h1 class="text-lg font-black tracking-tighter uppercase">Stratejist<span
+                        class="text-blue-600">Pro</span></h1>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm">
+                <h3 data-translate-key="loginTitle" class="text-lg font-black text-slate-800 mb-2">Giriş Yap</h3>
+                <p data-translate-key="loginSubtitle" class="text-sm text-slate-500 mb-4">Fikirlerinize erişmek için
+                    giriş yapın.</p>
+                <p id="loginSuccess" class="text-xs text-green-600 h-4 mb-2"></p>
+                <input type="text" id="loginUsername" data-translate-key="usernamePlaceholder"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500 mb-3"
+                    placeholder="Kullanıcı Adı">
+                <div class="relative mb-2">
+                    <input type="password" id="loginPassword" data-translate-key="passwordPlaceholder"
+                        class="w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500 pr-10"
+                        placeholder="Şifre">
+                    <button type="button" onclick="togglePassword('loginPassword')"
+                        class="absolute right-3 top-3 text-slate-400 hover:text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="text-right mb-4">
+                    <button onclick="showForgotPasswordForm()" data-translate-key="forgotPassword"
+                        class="text-xs font-bold text-blue-600 hover:underline">Şifremi unuttum?</button>
+                </div>
+                <button onclick="handleLogin()" data-translate-key="loginButton"
+                    class="w-full py-3 px-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all mb-3">Giriş
+                    Yap</button>
+                <button onclick="handleDemoLogin()" data-translate-key="demoLogin"
+                    class="w-full py-3 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all mb-4">Deneme
+                    Girişi</button>
+                <p id="loginError" class="text-xs text-red-500 h-4 mb-2"></p>
+                <button onclick="showRegisterForm()" data-translate-key="noAccount"
+                    class="text-xs font-bold text-slate-500 hover:text-blue-600">Hesabın yok mu? Kayıt Ol</button>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" class="hidden">
+                <h3 data-translate-key="registerTitle" class="text-lg font-black text-slate-800 mb-2">Kayıt Ol</h3>
+                <p data-translate-key="registerSubtitle" class="text-sm text-slate-500 mb-6">Yeni bir hesap oluşturun.
+                </p>
+                <input type="text" id="registerUsername" data-translate-key="usernamePlaceholder"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500 mb-3"
+                    placeholder="Kullanıcı Adı">
+                <input type="email" id="registerEmail" data-translate-key="emailPlaceholder"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500 mb-3"
+                    placeholder="E-posta Adresi">
+                <div class="relative mb-3">
+                    <input type="password" id="registerPassword" data-translate-key="passwordPlaceholder"
+                        class="w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500 pr-10"
+                        placeholder="Şifre">
+                    <button type="button" onclick="togglePassword('registerPassword')"
+                        class="absolute right-3 top-3 text-slate-400 hover:text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="relative mb-4">
+                    <input type="password" id="registerPasswordConfirm" data-translate-key="confirmPasswordPlaceholder"
+                        class="w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500 pr-10"
+                        placeholder="Şifre Tekrar">
+                    <button type="button" onclick="togglePassword('registerPasswordConfirm')"
+                        class="absolute right-3 top-3 text-slate-400 hover:text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+                </div>
+                <button onclick="handleRegister()" data-translate-key="registerButton"
+                    class="w-full py-3 px-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all mb-4">Kayıt
+                    Ol</button>
+                <p id="registerError" class="text-xs text-red-500 h-4 mb-2"></p>
+                <button onclick="showLoginForm()" data-translate-key="hasAccount"
+                    class="text-xs font-bold text-slate-500 hover:text-blue-600">Zaten hesabın var mı? Giriş
+                    Yap</button>
+            </div>
+
+            <!-- Forgot Password Form -->
+            <div id="forgotPasswordForm" class="hidden">
+                <h3 data-translate-key="forgotPasswordTitle" class="text-lg font-black text-slate-800 mb-2">Şifre
+                    Sıfırlama</h3>
+                <p data-translate-key="forgotPasswordSubtitle" class="text-sm text-slate-500 mb-6">E-posta adresinize
+                    doğrulama kodu gönderilecek.</p>
+
+                <div id="forgotStep1">
+                    <input type="email" id="forgotEmail" data-translate-key="emailPlaceholder"
+                        class="w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500 mb-4"
+                        placeholder="E-posta Adresi">
+                    <button onclick="handleSendCode()" data-translate-key="sendCodeButton"
+                        class="w-full py-3 px-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all mb-4">Kod
+                        Gönder</button>
+                </div>
+
+                <div id="forgotStep2" class="hidden">
+                    <input type="text" id="forgotCode" data-translate-key="codePlaceholder"
+                        class="w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500 mb-3"
+                        placeholder="Doğrulama Kodu">
+                    <div class="relative mb-4">
+                        <input type="password" id="newPassword" data-translate-key="newPasswordPlaceholder"
+                            class="w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500 pr-10"
+                            placeholder="Yeni Şifre">
+                        <button type="button" onclick="togglePassword('newPassword')"
+                            class="absolute right-3 top-3 text-slate-400 hover:text-blue-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                    <button onclick="handleResetPassword()" data-translate-key="resetPasswordButton"
+                        class="w-full py-3 px-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all mb-4">Şifreyi
+                        Güncelle</button>
+                </div>
+
+                <p id="forgotError" class="text-xs text-red-500 h-4 mb-2"></p>
+                <button onclick="showLoginForm()" data-translate-key="backToLogin"
+                    class="text-xs font-bold text-slate-500 hover:text-blue-600">Giriş ekranına dön</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentIdeas = [];
+        let scoreChart = null;
+        let previousIdeas = [];
+        // geçmiş durum saklamak için yığın
+        let historyStack = [];
+        let currentSortType = 'ai'; // 'ai' veya 'manual'
+        let currentLang = 'tr';
+        let currentUser = null;
+        let generatedCode = null; // Şifre sıfırlama için geçici kod
+
+        const translations = {
+            en: {
+                pageTitle: "Strategist Pro - Detailed Analysis",
+                apiSettings: "API Settings",
+                saveAsPdf: "Save as PDF",
+                groupPurpose: "Group Objective",
+                groupPurposePlaceholder: "What is the main goal of this group? (e.g., Increase Efficiency)",
+                ideas: "Ideas",
+                ideaTitlePlaceholder: "Idea Title...",
+                ideaNotePlaceholder: "Short description...",
+                addIdea: "+ New Idea",
+                startAnalysis: "Start Analysis",
+                analyzing: "Analyzing...",
+                placeholderText: "Start the analysis by entering your ideas...",
+                finalRanking: "Final Ranking",
+                objective: "OBJECTIVE:",
+                rank: "Rank",
+                ideaAndOutput: "Idea & Analysis Output",
+                aiScore: "AI Score",
+                userAction: "User Action",
+                userScore: "User Score",
+                sortByAi: "Sort by AI Score",
+                sortByUser: "Sort by User Score",
+                chartTitle: "Score Comparison Chart",
+                confirmPdfTitle: "Create PDF?",
+                confirmPdfBody: "Your analysis report, score table, and comparison chart will be prepared as a PDF.",
+                cancel: "Cancel",
+                confirmSave: "Yes, Save",
+                geminiApiSettings: "Gemini API Settings",
+                geminiApiDescription: "Enter your Google API key for real-time analysis. Your key is stored only in your browser.",
+                apiKeyInput: "AIzaSy...",
+                save: "Save",
+                simulationMode: "If no key is entered, the system runs in simulation mode.",
+                addIdeaAndAnalyze: "+ Add Idea & Analyze",
+                undo: "Undo",
+                reset: "Reset All",
+                errorMinOneIdea: "Please enter at least one idea.",
+                alertApiSuccess: "API Key saved successfully. Real AI will now be used.",
+                alertApiSession: "API key is set for this session. Due to browser restrictions, the key could not be saved permanently.",
+                errorNoUndo: "No actions to undo.",
+                aiReportBadge: "AI Strategic Analysis Report",
+                aiScoreLabel: "AI Score:",
+                logout: "LOGOUT",
+                loginTitle: "Login",
+                loginSubtitle: "Log in to access your ideas.",
+                usernamePlaceholder: "Username",
+                passwordPlaceholder: "Password",
+                emailPlaceholder: "Email Address",
+                confirmPasswordPlaceholder: "Confirm Password",
+                loginButton: "Login",
+                noAccount: "Don't have an account? Register",
+                registerTitle: "Register",
+                registerSubtitle: "Create a new account.",
+                registerButton: "Register",
+                hasAccount: "Already have an account? Login",
+                confirmReset: "Are you sure you want to reset all ideas and analyses? This cannot be undone.",
+                delete: "Delete",
+                analysisOutput: "Analysis Output:",
+                pros: "Pros (+)",
+                cons: "Cons (-)",
+                askAiPlaceholder: "Ask a question about this idea to the AI...",
+                askAiButton: "Ask AI",
+                optionalTitle: "Title (optional)",
+                notePlaceholder: "Sub-description or note",
+                addNote: "Add Note",
+                promptNewIdea: "New idea title (short):",
+                promptNewNote: "Short note (optional):",
+                defaultPurpose: "General Strategic Goal",
+                aiThinking: "AI is thinking...",
+                aiResponse: "AI Response",
+                inResponseTo: "In response to",
+                errorIdeaNotFound: "Sorry, this idea cannot be found. Please refresh the page and try again.",
+                summary: "Summary",
+                errorCredentials: "Invalid username or password.",
+                errorUserExists: "This username is already taken.",
+                errorFieldEmpty: "All fields are required.",
+                errorInvalidEmail: "Please enter a valid email address.",
+                errorPasswordMismatch: "Passwords do not match.",
+                errorPasswordComplexity: "Password must be at least 8 characters, with one uppercase and one lowercase letter.",
+                registerSuccess: "Registration successful! You can now log in.",
+                welcomeBack: "Welcome back, '{username}'!",
+                welcomeNew: "Welcome, '{username}'! Your account has been created.",
+                confirmLogout: "Are you sure you want to log out?",
+                forgotPassword: "Forgot Password?",
+                demoLogin: "Demo Login",
+                forgotPasswordTitle: "Reset Password",
+                forgotPasswordSubtitle: "A verification code will be sent to your email.",
+                sendCodeButton: "Send Code",
+                codePlaceholder: "Verification Code",
+                newPasswordPlaceholder: "New Password",
+                resetPasswordButton: "Update Password",
+                backToLogin: "Back to Login",
+                codeSentAlert: "Verification Code: {code}\n(In a real app, this would be emailed)",
+                resetSuccess: "Password updated successfully. Please login.",
+                errorEmailNotFound: "Email address not found.",
+                errorCodeInvalid: "Invalid verification code.",
+                demoUser: "Guest",
+                shortDesc: "Short Description",
+                detailedReview: "Detailed Review",
+                reviewIntro: "This section discusses the expected impacts, ease of implementation, and key risk factors of the idea.",
+                expectedImpact: "Expected Impact",
+                impactVerbs: ["accelerate", "optimize", "transform", "strengthen"],
+                misalignedSummary: "<strong>MISALIGNED IDEA:</strong> This idea does not show a direct alignment with the group objective of <em>{purpose}</em>. Therefore, its strategic priority is low, and resource allocation is not recommended.",
+                misalignedCons: "Does not align with the core group objective.",
+                misalignedRec: "Recommendation: Do not proceed. Re-evaluate idea based on objectives.",
+                simThemes: [
+                    "could create a strategic leverage effect.",
+                    "is critical for long-term sustainability.",
+                    "has the potential to increase current operational efficiency.",
+                    "is an innovative approach that directly serves the objective.",
+                    "stands out with its ease of implementation and low cost."
+                ],
+                simPros: [
+                    `Cost-effective: implementation costs are relatively low, and a return on investment can be expected in the short/medium term.`,
+                    `Quick pilot: can be quickly tested with small-scale pilots; early results accelerate decisions.`,
+                    `Resource compatibility: integration with existing manpower and infrastructure is easy; special team requirements may be limited.`,
+                    `Scalability: suitable for horizontal or vertical scaling after a successful pilot.`,
+                    `Operational ease: integration into daily processes may be possible with minimal training.`,
+                    `Adaptability: can be modularly adapted to different department needs.`
+                ],
+                simCons: [
+                    `Time cost: planning and coordination time may be required initially for full value generation.`,
+                    `Technical challenges: technical debt or compatibility problems may arise during integration with existing systems.`,
+                    `Data deficiency: lack of sufficient data for decision support mechanisms can affect accuracy and prioritization.`,
+                    `External dependency: third-party service or supply chain dependencies can increase risk.`,
+                    `User adoption: resistance to process change may delay adoption in the short term.`
+                ],
+                simRecommendation: `Recommendation: test {title} with a small pilot application; identify and address data collection and integration needs at an early stage.`,
+                simEstimatedImpact: `{percent}% (estimated impact for the first 6-12 months)`,
+                simAutoNote: `A strategic initiative focusing on {title} to support the {purpose} objective.`,
+                simSummary: `In light of strategic evaluations; the <strong>{title}</strong> idea has the potential to play a critical role in achieving the organization's <em>{purpose}</em> goals. {randomTheme} It can particularly {randomVerb} the current structure in resource management and process improvement areas. Long-term projections indicate that this initiative could provide a sustainable competitive advantage.`,
+                geminiAnalysisPrompt: `
+            You are a strict and critical strategic business analyst. Your task is to evaluate the following idea against the specific Group Objective.
+            Idea: {title}
+            Note: {note}
+            Group Objective: {purpose}
+
+            CRITICAL INSTRUCTIONS:
+            1. **CONTEXTUAL ALIGNMENT (CRUCIAL):** Strictly compare the nature of the Idea with the Group Objective.
+               - If the objective is DIGITAL (e.g., "Software", "App", "Online Platform") and the idea is PHYSICAL (e.g., "Opening a Cafe", "Manufacturing"), score it exactly 0.
+               - If the objective is PHYSICAL and the idea is purely DIGITAL, score it exactly 0.
+            2. **LOGICAL FEASIBILITY:** If the idea is logically impossible or completely unrealistic within the context, score it exactly 0.
+            3. If the "aiScore" is 0, the "summary" must clearly explain the misalignment (e.g., "Context mismatch: Digital vs Physical").
+            4. If aligned and logical, score between 60 and 100 based on feasibility and impact.
+            5. Be direct and concise. Avoid fluff.
+
+            Please provide the output ONLY in the following JSON format (no Markdown):
+            {
+                "correctedTitle": "The corrected version of the idea title",
+                "correctedNote": "The corrected version of the note",
+                "summary": "A detailed, professional analysis summary (use plain text, no HTML tags)",
+                "pros": ["Pro 1", "Pro 2", "Pro 3"],
+                "cons": ["Con 1", "Con 2"],
+                "recommendation": "A short strategic recommendation",
+                "estimatedImpact": "Estimated impact percentage (e.g., %85)",
+                "aiScore": 75 (an integer between 60 and 100)
+            }
+            `,
+                geminiQuestionPrompt: `
+            You are a direct and no-nonsense strategic business analyst.
+            Group Objective: "{purpose}"
+            Idea: "{title}" ({note})
+            Current Analysis: {analysis}
+            
+            User Question: "{question}"
+            Provide a direct, net, and concise answer. Do not repeat the analysis unless necessary.
+            If the user asks about feasibility ("can we", "is it possible"), give a definitive "Yes" or "No" with a reason based on the analysis. Do not suggest "trying it out".
+            `
+            },
+            tr: {
+                pageTitle: "Stratejist Pro - Detaylı Analiz",
+                apiSettings: "API Ayarları",
+                saveAsPdf: "PDF Olarak Kaydet",
+                groupPurpose: "Grup Amacı",
+                groupPurposePlaceholder: "Bu grubun temel hedefi nedir? (Örn: Verimlilik Artışı)",
+                ideas: "Fikirler",
+                ideaTitlePlaceholder: "Fikir Başlığı...",
+                ideaNotePlaceholder: "Kısa açıklama...",
+                addIdea: "+ Yeni Fikir",
+                startAnalysis: "Analizi Başlat",
+                analyzing: "Analiz Ediliyor...",
+                placeholderText: "Fikirlerinizi girerek analizi başlatın...",
+                finalRanking: "Kesinleşmiş Sıralama",
+                objective: "HEDEF:",
+                rank: "Sıra",
+                ideaAndOutput: "Fikir & Analiz Çıktısı",
+                aiScore: "Yapay Zeka Puanı",
+                userAction: "Kullanıcı İşlemi",
+                userScore: "Kullanıcı Puanı",
+                sortByAi: "Yapay Zeka Puanına Göre Sırala",
+                sortByUser: "Kullanıcı Puanına Göre Sırala",
+                chartTitle: "Puan Karşılaştırma Grafiği",
+                confirmPdfTitle: "PDF Oluşturulsun mu?",
+                confirmPdfBody: "Analiz raporunuz, puan tablonuz ve karşılaştırma grafiğiniz PDF olarak hazırlanacaktır.",
+                cancel: "İptal",
+                confirmSave: "Evet, Kaydet",
+                geminiApiSettings: "Gemini API Ayarları",
+                geminiApiDescription: "Gerçek zamanlı analizler için Google API anahtarınızı giriniz. Anahtarınız sadece tarayıcınızda saklanır.",
+                apiKeyInput: "AIzaSy...",
+                save: "Kaydet",
+                simulationMode: "Anahtar girilmezse sistem simülasyon modunda çalışır.",
+                addIdeaAndAnalyze: "Fikir Ekle & Analiz Et",
+                undo: "Geri Al",
+                reset: "Herşeyi Sıfırla",
+                errorMinOneIdea: "Lütfen en az bir fikir giriniz.",
+                alertApiSuccess: "API Anahtarı başarıyla kaydedildi. Artık gerçek yapay zeka kullanılacak.",
+                alertApiSession: "API anahtarı bu oturum için ayarlandı. Tarayıcı kısıtlamaları nedeniyle anahtar kalıcı olarak kaydedilemedi.",
+                errorNoUndo: "Geri alınacak işlem yok.",
+                aiReportBadge: "AI Stratejik Analiz Raporu",
+                aiScoreLabel: "AI Skor:",
+                logout: "ÇIKIŞ YAP",
+                loginTitle: "Giriş Yap",
+                loginSubtitle: "Fikirlerinize erişmek için giriş yapın.",
+                usernamePlaceholder: "Kullanıcı Adı",
+                passwordPlaceholder: "Şifre",
+                emailPlaceholder: "E-posta Adresi",
+                confirmPasswordPlaceholder: "Şifre Tekrar",
+                loginButton: "Giriş Yap",
+                noAccount: "Hesabın yok mu? Kayıt Ol",
+                registerTitle: "Kayıt Ol",
+                registerSubtitle: "Yeni bir hesap oluşturun.",
+                registerButton: "Kayıt Ol",
+                hasAccount: "Zaten hesabın var mı? Giriş Yap",
+                confirmReset: "Tüm fikirleri ve analizleri sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+                delete: "Sil",
+                analysisOutput: "Analiz Çıktısı:",
+                pros: "Artılar (+)",
+                cons: "Eksiler (-)",
+                askAiPlaceholder: "Bu fikir için yapay zekaya bir soru sor...",
+                askAiButton: "Yapay Zekaya Sor",
+                optionalTitle: "Başlık (isteğe bağlı)",
+                notePlaceholder: "Alt açıklama veya not",
+                addNote: "Not Ekle",
+                promptNewIdea: "Yeni fikir başlığı (kısa):",
+                promptNewNote: "Kısa not (opsiyonel):",
+                defaultPurpose: "Genel Stratejik Hedef",
+                aiThinking: "Yapay Zeka düşünüyor...",
+                aiResponse: "AI Yanıtı",
+                inResponseTo: "sorusuna istinaden:",
+                errorIdeaNotFound: "Üzgünüm, bu fikir bulunamıyor. Lütfen sayfayı yenileyip tekrar deneyin.",
+                simThemes: ["stratejik bir kaldıraç etkisi yaratabilir.", "uzun vadeli sürdürülebilirlik açısından kritik öneme sahip.", "mevcut operasyonel verimliliği artırma potansiyeli taşıyor.", "hedefine doğrudan hizmet eden inovatif bir yaklaşım.", "uygulama kolaylığı ve düşük maliyeti ile ön plana çıkıyor."],
+                errorCredentials: "Geçersiz kullanıcı adı veya şifre.",
+                errorUserExists: "Bu kullanıcı adı zaten alınmış.",
+                errorFieldEmpty: "Tüm alanlar zorunludur.",
+                errorInvalidEmail: "Lütfen geçerli bir e-posta adresi girin.",
+                errorPasswordMismatch: "Şifreler eşleşmiyor.",
+                errorPasswordComplexity: "Şifre en az 8 karakter, bir büyük ve bir küçük harf içermelidir.",
+                registerSuccess: "Kayıt başarılı! Şimdi giriş yapabilirsiniz.",
+                welcomeBack: "Tekrar hoş geldin, '{username}'!",
+                welcomeNew: "'{username}' hoş geldin! Hesabın oluşturuldu.",
+                confirmLogout: "Çıkış yapmak istediğinizden emin misiniz?",
+                forgotPassword: "Şifremi unuttum?",
+                demoLogin: "Deneme Girişi",
+                forgotPasswordTitle: "Şifre Sıfırlama",
+                forgotPasswordSubtitle: "E-posta adresinize doğrulama kodu gönderilecek.",
+                sendCodeButton: "Kod Gönder",
+                codePlaceholder: "Doğrulama Kodu",
+                newPasswordPlaceholder: "Yeni Şifre",
+                resetPasswordButton: "Şifreyi Güncelle",
+                backToLogin: "Giriş ekranına dön",
+                codeSentAlert: "Doğrulama Kodunuz: {code}\n(Gerçek uygulamada bu e-posta ile gönderilir)",
+                resetSuccess: "Şifre başarıyla güncellendi. Lütfen giriş yapın.",
+                errorEmailNotFound: "Bu e-posta adresi kayıtlı değil.",
+                errorCodeInvalid: "Geçersiz doğrulama kodu.",
+                demoUser: "Misafir",
+                summary: "Özet",
+                shortDesc: "Kısa Açıklama",
+                detailedReview: "Detaylı İnceleme",
+                reviewIntro: "Bu bölümde fikrin beklenen etkileri, uygulama kolaylığı ve ana risk faktörleri üzerinde durulmuştur.",
+                expectedImpact: "Beklenen Etki",
+                impactVerbs: ["hızlandırabilir", "optimize edebilir", "dönüştürebilir", "güçlendirebilir"],
+                misalignedSummary: "<strong>UYUMSUZ FİKİR:</strong> Bu fikir, <em>{purpose}</em> grup amacıyla doğrudan bir uyum göstermiyor. Bu nedenle stratejik önceliği düşüktür ve kaynak ayrılması önerilmez.",
+                misalignedCons: "Temel grup amacıyla uyumlu değil.",
+                misalignedRec: "Öneri: İlerlemeyin. Fikri hedeflere göre yeniden değerlendirin.",
+                simPros: [`Maliyet-etkin: uygulama maliyetleri nispeten düşüktür ve kısa/orta vadede yatırım geri dönüşü beklenebilir.`, `Hızlı pilot: küçük ölçekli pilotlarla hızlıca test edilebilir; erken sonuçlar kararları hızlandırır.`, `Kaynak uyumu: mevcut insan gücü ve altyapı ile entegrasyonu kolaydır; özel ekip gereksinimi sınırlı olabilir.`, `Ölçeklenebilirlik: başarılı pilot sonrası yatay veya dikey ölçeklendirme uygundur.`, `Operasyonel kolaylık: günlük süreçlere entegrasyonu minimal eğitimle mümkün olabilir.`, `Uyarlanabilirlik: farklı departman ihtiyaçlarına göre modüler şekilde uyarlanabilir.`],
+                simCons: [`Zaman maliyeti: tam değer üretimi için başlangıçta planlama ve koordinasyon süreleri gerekebilir.`, `Teknik zorluklar: mevcut sistemlerle entegrasyon sırasında teknik borç veya uyum problemleri ortaya çıkabilir.`, `Veri eksikliği: karar destek mekanizmaları için yeterli veri olmaması doğruluk ve önceliklendirmeyi etkileyebilir.`, `Dış bağımlılık: üçüncü taraf servis veya tedarik zinciri bağımlılıkları riski artırabilir.`, `Kullanıcı kabulü: süreç değişikliği direnci kısa vadede benimsenmeyi geciktirebilir.`],
+                simRecommendation: `Öneri: küçük bir pilot uygulama ile {title} test edilsin; veri toplama ve entegrasyon ihtiyaçları erken aşamada belirlenip giderilsin.`,
+                simEstimatedImpact: `% {percent} (ilk 6-12 ay için tahmini etkisi)`,
+                simAutoNote: `{title} üzerine odaklanan, {purpose} hedefini destekleyici stratejik inisiyatif.`,
+                simSummary: `Yapılan stratejik değerlendirmeler ışığında; <strong>{title}</strong> fikri, organizasyonun <em>{purpose}</em> hedeflerine ulaşmasında kritik bir rol oynama potansiyeline sahiptir. {randomTheme} Özellikle kaynak yönetimi ve süreç iyileştirme alanlarında mevcut yapıyı {randomVerb}. Uzun vadeli projeksiyonlar, bu girişimin sürdürülebilir rekabet avantajı sağlayabileceğini işaret etmektedir.`,
+                geminiAnalysisPrompt: `
+            Sen, katı ve eleştirel bir stratejik iş analistisin. Görevin aşağıdaki fikri, belirtilen Grup Amacı ile uyumluluğu açısından değerlendirmektir.
+            Fikir: {title}
+            Not: {note}
+            Grup Amacı: {purpose}
+
+            KRİTİK TALİMATLAR:
+            1. **BAĞLAMSAL UYUM (ÇOK ÖNEMLİ):** Fikrin doğası ile Grup Amacını sıkı bir şekilde karşılaştır.
+               - Eğer amaç DİJİTAL ise (örn: "Yazılım", "Uygulama", "Online") ve fikir FİZİKSEL ise (örn: "Kafe Açmak", "Üretim"), puanı (aiScore) kesinlikle 0 ver.
+               - Eğer amaç FİZİKSEL/GERÇEK DÜNYA ise ve fikir tamamen DİJİTAL ise, puanı kesinlikle 0 ver.
+            2. **MANTIKSAL OLASILIK:** Fikir mantıken imkansızsa veya bağlam içinde tamamen gerçek dışıysa puanı 0 ver.
+            3. Eğer puan 0 ise, "summary" kısmında bu uyumsuzluğu net bir şekilde açıkla (Örn: "Bağlam uyuşmazlığı: Dijital hedefe Fiziksel fikir").
+            4. Eğer uyumlu ve mantıklıysa, uygulanabilirlik ve etkiye göre 60 ile 100 arasında puanla.
+            5. Direkt ve net ol. Gereksiz süslemelerden kaçın.
+
+            Lütfen çıktıyı SADECE aşağıdaki JSON formatında ver (Markdown yok):
+            {
+                "correctedTitle": "Fikrin başlığının yazım hataları düzeltilmiş hali",
+                "correctedNote": "Notun yazım hataları düzeltilmiş hali",
+                "summary": "Detaylı, profesyonel analiz özeti (HTML etiketleri kullanma, düz metin)",
+                "pros": ["Artı 1", "Artı 2", "Artı 3"],
+                "cons": ["Eksi 1", "Eksi 2"],
+                "recommendation": "Kısa stratejik öneri",
+                "estimatedImpact": "Tahmini etki yüzdesi (örn: %85)",
+                "aiScore": 75 (60 ile 100 arasında bir tam sayı puan)
+            }
+            `,
+                geminiQuestionPrompt: `
+            Sen direkt ve net konuşan bir stratejik iş analistisin.
+            Grup Amacı: "{purpose}"
+            Fikir: "{title}" ({note})
+            Mevcut Analiz: {analysis}
+            
+            Kullanıcı Sorusu: "{question}"
+            Bu soruya direkt, net ve kısa bir cevap ver. Analizi tekrar etme, sadede gel.
+            Eğer kullanıcı "olur mu", "yapabilir miyiz" gibi bir olasılık sorarsa, "deneyin" deme. Analize dayanarak net bir şekilde "Evet, olur çünkü..." veya "Hayır, olmaz çünkü..." şeklinde gerekçeli ve kesin konuş.
+            `
+            }
+            ,
+            de: {
+                pageTitle: "Strategist Pro - Detaillierte Analyse",
+                apiSettings: "API-Einstellungen",
+                saveAsPdf: "Als PDF speichern",
+                groupPurpose: "Gruppenziel",
+                groupPurposePlaceholder: "Was ist das Hauptziel dieser Gruppe? (z.B. Effizienzsteigerung)",
+                ideas: "Ideen",
+                ideaTitlePlaceholder: "Ideentitel...",
+                ideaNotePlaceholder: "Kurzbeschreibung...",
+                addIdea: "+ Neue Idee",
+                startAnalysis: "Analyse starten",
+                analyzing: "Analysieren...",
+                placeholderText: "Beginnen Sie die Analyse, indem Sie Ihre Ideen eingeben...",
+                finalRanking: "Endgültige Rangliste",
+                objective: "ZIEL:",
+                rank: "Rang",
+                ideaAndOutput: "Idee & Analyseergebnis",
+                aiScore: "KI-Punktzahl",
+                userAction: "Benutzeraktion",
+                userScore: "Benutzerpunktzahl",
+                sortByAi: "Nach KI-Punktzahl sortieren",
+                sortByUser: "Nach Benutzerpunktzahl sortieren",
+                chartTitle: "Punktzahl-Vergleichsdiagramm",
+                confirmPdfTitle: "PDF erstellen?",
+                confirmPdfBody: "Ihr Analysebericht, die Punktetabelle und das Vergleichsdiagramm werden als PDF erstellt.",
+                cancel: "Abbrechen",
+                confirmSave: "Ja, speichern",
+                geminiApiSettings: "Gemini API-Einstellungen",
+                geminiApiDescription: "Geben Sie Ihren Google API-Schlüssel für Echtzeitanalysen ein. Ihr Schlüssel wird nur in Ihrem Browser gespeichert.",
+                apiKeyInput: "AIzaSy...",
+                save: "Speichern",
+                simulationMode: "Wenn kein Schlüssel eingegeben wird, läuft das System im Simulationsmodus.",
+                addIdeaAndAnalyze: "+ Idee hinzufügen & analysieren",
+                undo: "Rückgängig",
+                reset: "Alles zurücksetzen",
+                errorMinOneIdea: "Bitte geben Sie mindestens eine Idee ein.",
+                alertApiSuccess: "API-Schlüssel erfolgreich gespeichert. Echte KI wird jetzt verwendet.",
+                alertApiSession: "API-Schlüssel ist für diese Sitzung festgelegt. Aufgrund von Browsereinschränkungen konnte der Schlüssel nicht dauerhaft gespeichert werden.",
+                errorNoUndo: "Keine Aktionen zum Rückgängigmachen.",
+                aiReportBadge: "KI Strategischer Analysebericht",
+                aiScoreLabel: "KI-Score:",
+                logout: "ABMELDEN",
+                loginTitle: "Anmelden",
+                loginSubtitle: "Melden Sie sich an, um auf Ihre Ideen zuzugreifen.",
+                usernamePlaceholder: "Benutzername",
+                passwordPlaceholder: "Passwort",
+                emailPlaceholder: "E-Mail-Adresse",
+                confirmPasswordPlaceholder: "Passwort bestätigen",
+                loginButton: "Anmelden",
+                noAccount: "Kein Konto? Registrieren",
+                registerTitle: "Registrieren",
+                registerSubtitle: "Erstellen Sie ein neues Konto.",
+                registerButton: "Registrieren",
+                hasAccount: "Haben Sie bereits ein Konto? Anmelden",
+                confirmReset: "Sind Sie sicher, dass Sie alle Ideen und Analysen zurücksetzen möchten? Dies kann nicht rückgängig gemacht werden.",
+                delete: "Löschen",
+                analysisOutput: "Analyseergebnis:",
+                pros: "Vorteile (+)",
+                cons: "Nachteile (-)",
+                askAiPlaceholder: "Stellen Sie der KI eine Frage zu dieser Idee...",
+                askAiButton: "KI fragen",
+                optionalTitle: "Titel (optional)",
+                notePlaceholder: "Unterbeschreibung oder Notiz",
+                addNote: "Notiz hinzufügen",
+                promptNewIdea: "Neuer Ideentitel (kurz):",
+                promptNewNote: "Kurze Notiz (optional):",
+                defaultPurpose: "Allgemeines strategisches Ziel",
+                aiThinking: "KI denkt nach...",
+                aiResponse: "KI-Antwort",
+                inResponseTo: "als Antwort auf:",
+                errorIdeaNotFound: "Entschuldigung, diese Idee kann nicht gefunden werden. Bitte aktualisieren Sie die Seite und versuchen Sie es erneut.",
+                summary: "Zusammenfassung",
+                errorCredentials: "Ungültiger Benutzername oder Passwort.",
+                errorUserExists: "Dieser Benutzername ist bereits vergeben.",
+                errorFieldEmpty: "Alle Felder sind erforderlich.",
+                errorInvalidEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+                errorPasswordMismatch: "Passwörter stimmen nicht überein.",
+                errorPasswordComplexity: "Das Passwort muss mindestens 8 Zeichen lang sein und einen Groß- und einen Kleinbuchstaben enthalten.",
+                registerSuccess: "Registrierung erfolgreich! Sie können sich jetzt anmelden.",
+                welcomeBack: "Willkommen zurück, '{username}'!",
+                welcomeNew: "Willkommen, '{username}'! Ihr Konto wurde erstellt.",
+                confirmLogout: "Sind Sie sicher, dass Sie sich abmelden möchten?",
+                forgotPassword: "Passwort vergessen?",
+                demoLogin: "Demo-Login",
+                forgotPasswordTitle: "Passwort zurücksetzen",
+                forgotPasswordSubtitle: "Ein Bestätigungscode wird an Ihre E-Mail gesendet.",
+                sendCodeButton: "Code senden",
+                codePlaceholder: "Bestätigungscode",
+                newPasswordPlaceholder: "Neues Passwort",
+                resetPasswordButton: "Passwort aktualisieren",
+                backToLogin: "Zurück zur Anmeldung",
+                codeSentAlert: "Bestätigungscode: {code}\n(In einer echten App würde dies per E-Mail gesendet)",
+                resetSuccess: "Passwort erfolgreich aktualisiert. Bitte melden Sie sich an.",
+                errorEmailNotFound: "E-Mail-Adresse nicht gefunden.",
+                errorCodeInvalid: "Ungültiger Bestätigungscode.",
+                demoUser: "Gast",
+                shortDesc: "Kurzbeschreibung",
+                detailedReview: "Detaillierte Überprüfung",
+                reviewIntro: "Dieser Abschnitt behandelt die erwarteten Auswirkungen, die einfache Implementierung und die wichtigsten Risikofaktoren der Idee.",
+                expectedImpact: "Erwartete Auswirkung",
+                impactVerbs: ["beschleunigen", "optimieren", "transformieren", "stärken"],
+                misalignedSummary: "<strong>NICHT AUSGERICHTETE IDEE:</strong> Diese Idee zeigt keine direkte Übereinstimmung mit dem Gruppenziel <em>{purpose}</em>. Daher ist ihre strategische Priorität niedrig und eine Ressourcenzuweisung wird nicht empfohlen.",
+                misalignedCons: "Stimmt nicht mit dem Kerngruppenziel überein.",
+                misalignedRec: "Empfehlung: Nicht fortfahren. Idee anhand der Ziele neu bewerten.",
+                simThemes: [
+                    "könnte einen strategischen Hebeleffekt erzeugen.",
+                    "ist entscheidend für die langfristige Nachhaltigkeit.",
+                    "hat das Potenzial, die aktuelle betriebliche Effizienz zu steigern.",
+                    "ist ein innovativer Ansatz, der direkt dem Ziel dient.",
+                    "zeichnet sich durch einfache Implementierung und geringe Kosten aus."
+                ],
+                simPros: [
+                    "Kosteneffizient: Die Implementierungskosten sind relativ gering.",
+                    "Schneller Pilot: Kann schnell mit kleinen Piloten getestet werden.",
+                    "Ressourcenkompatibilität: Einfache Integration mit vorhandenen Arbeitskräften.",
+                    "Skalierbarkeit: Geeignet für horizontale oder vertikale Skalierung.",
+                    "Operative Leichtigkeit: Integration in tägliche Prozesse möglich.",
+                    "Anpassungsfähigkeit: Kann modular an verschiedene Bedürfnisse angepasst werden."
+                ],
+                simCons: [
+                    "Zeitaufwand: Planung und Koordination erforderlich.",
+                    "Technische Herausforderungen: Mögliche Kompatibilitätsprobleme.",
+                    "Datenmangel: Mangel an ausreichenden Daten für Entscheidungen.",
+                    "Externe Abhängigkeit: Abhängigkeit von Drittanbietern.",
+                    "Benutzerakzeptanz: Widerstand gegen Prozessänderungen."
+                ],
+                simRecommendation: "Empfehlung: Testen Sie {title} mit einer kleinen Pilotanwendung.",
+                simEstimatedImpact: "{percent}% (geschätzte Auswirkung für die ersten 6-12 Monate)",
+                simAutoNote: "Eine strategische Initiative mit Fokus auf {title} zur Unterstützung des Ziels {purpose}.",
+                simSummary: "Im Lichte strategischer Bewertungen hat die Idee <strong>{title}</strong> das Potenzial, eine entscheidende Rolle bei der Erreichung der Ziele von <em>{purpose}</em> zu spielen. {randomTheme} Sie kann insbesondere die aktuelle Struktur in den Bereichen Ressourcenmanagement und Prozessverbesserung {randomVerb}. Langfristige Prognosen deuten darauf hin, dass diese Initiative einen nachhaltigen Wettbewerbsvorteil bieten könnte.",
+                geminiAnalysisPrompt: `
+            Sie sind ein strenger und kritischer strategischer Geschäftsanalyst. Ihre Aufgabe ist es, die folgende Idee anhand des spezifischen Gruppenziels zu bewerten.
+            Idee: {title}
+            Notiz: {note}
+            Gruppenziel: {purpose}
+
+            KRITISCHE ANWEISUNGEN:
+            1. **KONTEXTUELLE AUSRICHTUNG (WICHTIG):** Vergleichen Sie die Art der Idee streng mit dem Gruppenziel.
+               - Wenn das Ziel DIGITAL ist (z.B. "Software", "App", "Online-Plattform") und die Idee PHYSISCH ist (z.B. "Café eröffnen", "Herstellung"), geben Sie genau 0 Punkte.
+               - Wenn das Ziel PHYSISCH ist und die Idee rein DIGITAL ist, geben Sie genau 0 Punkte.
+            2. **LOGISCHE MACHBARKEIT:** Wenn die Idee logisch unmöglich oder im Kontext völlig unrealistisch ist, geben Sie genau 0 Punkte.
+            3. Wenn der "aiScore" 0 ist, muss die "summary" die Fehlausrichtung klar erklären (z.B. "Kontext-Fehlanpassung: Digital vs. Physisch").
+            4. Wenn ausgerichtet und logisch, bewerten Sie zwischen 60 und 100 basierend auf Machbarkeit und Auswirkung.
+            5. Seien Sie direkt und prägnant. Vermeiden Sie Füllwörter.
+
+            Bitte geben Sie die Ausgabe NUR im folgenden JSON-Format an (kein Markdown):
+            {
+                "correctedTitle": "Die korrigierte Version des Ideentitels",
+                "correctedNote": "Die korrigierte Version der Notiz",
+                "summary": "Eine detaillierte, professionelle Analysezusammenfassung (verwenden Sie Klartext, keine HTML-Tags)",
+                "pros": ["Vorteil 1", "Vorteil 2", "Vorteil 3"],
+                "cons": ["Nachteil 1", "Nachteil 2"],
+                "recommendation": "Eine kurze strategische Empfehlung",
+                "estimatedImpact": "Geschätzter Auswirkungsprozentsatz (z.B. %85)",
+                "aiScore": 75 (eine ganze Zahl zwischen 60 und 100)
+            }
+            `,
+                geminiQuestionPrompt: `
+            Sie sind ein direkter und sachlicher strategischer Geschäftsanalyst.
+            Gruppenziel: "{purpose}"
+            Idee: "{title}" ({note})
+            Aktuelle Analyse: {analysis}
+            
+            Benutzerfrage: "{question}"
+            Geben Sie eine direkte, klare und prägnante Antwort. Wiederholen Sie die Analyse nicht, es sei denn, dies ist erforderlich.
+            Wenn der Benutzer nach der Machbarkeit fragt ("können wir", "ist es möglich"), geben Sie ein definitives "Ja" oder "Nein" mit einer Begründung basierend auf der Analyse. Schlagen Sie nicht vor, es "auszuprobieren".
+            `
+            },
+            es: {
+                pageTitle: "Strategist Pro - Análisis Detallado",
+                apiSettings: "Configuración API",
+                saveAsPdf: "Guardar como PDF",
+                groupPurpose: "Objetivo del Grupo",
+                groupPurposePlaceholder: "¿Cuál es el objetivo principal de este grupo? (ej. Aumentar Eficiencia)",
+                ideas: "Ideas",
+                ideaTitlePlaceholder: "Título de la Idea...",
+                ideaNotePlaceholder: "Descripción corta...",
+                addIdea: "+ Nueva Idea",
+                startAnalysis: "Iniciar Análisis",
+                analyzing: "Analizando...",
+                placeholderText: "Comience el análisis ingresando sus ideas...",
+                finalRanking: "Ranking Final",
+                objective: "OBJETIVO:",
+                rank: "Rango",
+                ideaAndOutput: "Idea y Resultado del Análisis",
+                aiScore: "Puntuación IA",
+                userAction: "Acción de Usuario",
+                userScore: "Puntuación de Usuario",
+                sortByAi: "Ordenar por Puntuación IA",
+                sortByUser: "Ordenar por Puntuación de Usuario",
+                chartTitle: "Gráfico de Comparación de Puntuación",
+                confirmPdfTitle: "¿Crear PDF?",
+                confirmPdfBody: "Su informe de análisis, tabla de puntuación y gráfico de comparación se prepararán como PDF.",
+                cancel: "Cancelar",
+                confirmSave: "Sí, Guardar",
+                geminiApiSettings: "Configuración API Gemini",
+                geminiApiDescription: "Ingrese su clave API de Google para análisis en tiempo real. Su clave se almacena solo en su navegador.",
+                apiKeyInput: "AIzaSy...",
+                save: "Guardar",
+                simulationMode: "Si no se ingresa clave, el sistema funciona en modo simulación.",
+                addIdeaAndAnalyze: "+ Añadir Idea y Analizar",
+                undo: "Deshacer",
+                reset: "Restablecer Todo",
+                errorMinOneIdea: "Por favor ingrese al menos una idea.",
+                alertApiSuccess: "Clave API guardada exitosamente. Ahora se usará IA real.",
+                alertApiSession: "La clave API está configurada para esta sesión. Debido a restricciones del navegador, la clave no se pudo guardar permanentemente.",
+                errorNoUndo: "No hay acciones para deshacer.",
+                aiReportBadge: "Informe de Análisis Estratégico IA",
+                aiScoreLabel: "Puntuación IA:",
+                logout: "CERRAR SESIÓN",
+                loginTitle: "Iniciar Sesión",
+                loginSubtitle: "Inicie sesión para acceder a sus ideas.",
+                usernamePlaceholder: "Nombre de usuario",
+                passwordPlaceholder: "Contraseña",
+                emailPlaceholder: "Dirección de correo electrónico",
+                confirmPasswordPlaceholder: "Confirmar Contraseña",
+                loginButton: "Iniciar Sesión",
+                noAccount: "¿No tiene cuenta? Registrarse",
+                registerTitle: "Registrarse",
+                registerSubtitle: "Crear una nueva cuenta.",
+                registerButton: "Registrarse",
+                hasAccount: "¿Ya tiene una cuenta? Iniciar Sesión",
+                confirmReset: "¿Está seguro de que desea restablecer todas las ideas y análisis? Esto no se puede deshacer.",
+                delete: "Eliminar",
+                analysisOutput: "Resultado del Análisis:",
+                pros: "Pros (+)",
+                cons: "Contras (-)",
+                askAiPlaceholder: "Haga una pregunta sobre esta idea a la IA...",
+                askAiButton: "Preguntar a IA",
+                optionalTitle: "Título (opcional)",
+                notePlaceholder: "Sub-descripción o nota",
+                addNote: "Añadir Nota",
+                promptNewIdea: "Nuevo título de idea (corto):",
+                promptNewNote: "Nota corta (opcional):",
+                defaultPurpose: "Objetivo Estratégico General",
+                aiThinking: "IA está pensando...",
+                aiResponse: "Respuesta IA",
+                inResponseTo: "en respuesta a:",
+                errorIdeaNotFound: "Lo siento, no se puede encontrar esta idea. Por favor actualice la página e intente de nuevo.",
+                summary: "Resumen",
+                errorCredentials: "Nombre de usuario o contraseña inválidos.",
+                errorUserExists: "Este nombre de usuario ya está en uso.",
+                errorFieldEmpty: "Todos los campos son obligatorios.",
+                errorInvalidEmail: "Por favor ingrese una dirección de correo electrónico válida.",
+                errorPasswordMismatch: "Las contraseñas no coinciden.",
+                errorPasswordComplexity: "La contraseña debe tener al menos 8 caracteres, con una mayúscula y una minúscula.",
+                registerSuccess: "¡Registro exitoso! Ahora puede iniciar sesión.",
+                welcomeBack: "¡Bienvenido de nuevo, '{username}'!",
+                welcomeNew: "¡Bienvenido, '{username}'! Su cuenta ha sido creada.",
+                confirmLogout: "¿Está seguro de que desea cerrar sesión?",
+                forgotPassword: "¿Olvidó su contraseña?",
+                demoLogin: "Inicio de Sesión Demo",
+                forgotPasswordTitle: "Restablecer Contraseña",
+                forgotPasswordSubtitle: "Se enviará un código de verificación a su correo electrónico.",
+                sendCodeButton: "Enviar Código",
+                codePlaceholder: "Código de Verificación",
+                newPasswordPlaceholder: "Nueva Contraseña",
+                resetPasswordButton: "Actualizar Contraseña",
+                backToLogin: "Volver al Inicio de Sesión",
+                codeSentAlert: "Código de Verificación: {code}\n(En una app real, esto se enviaría por correo)",
+                resetSuccess: "Contraseña actualizada exitosamente. Por favor inicie sesión.",
+                errorEmailNotFound: "Dirección de correo electrónico no encontrada.",
+                errorCodeInvalid: "Código de verificación inválido.",
+                demoUser: "Invitado",
+                shortDesc: "Descripción Corta",
+                detailedReview: "Revisión Detallada",
+                reviewIntro: "Esta sección discute los impactos esperados, la facilidad de implementación y los factores de riesgo clave de la idea.",
+                expectedImpact: "Impacto Esperado",
+                impactVerbs: ["acelerar", "optimizar", "transformar", "fortalecer"],
+                misalignedSummary: "<strong>IDEA DESALINEADA:</strong> Esta idea no muestra una alineación directa con el objetivo del grupo de <em>{purpose}</em>. Por lo tanto, su prioridad estratégica es baja y no se recomienda la asignación de recursos.",
+                misalignedCons: "No se alinea con el objetivo central del grupo.",
+                misalignedRec: "Recomendación: No proceder. Reevaluar la idea en función de los objetivos.",
+                simThemes: [
+                    "podría crear un efecto de palanca estratégico.",
+                    "es crítico para la sostenibilidad a largo plazo.",
+                    "tiene el potencial de aumentar la eficiencia operativa actual.",
+                    "es un enfoque innovador que sirve directamente al objetivo.",
+                    "se destaca por su facilidad de implementación y bajo costo."
+                ],
+                simPros: [
+                    "Rentable: los costos de implementación son relativamente bajos.",
+                    "Piloto rápido: se puede probar rápidamente con pilotos a pequeña escala.",
+                    "Compatibilidad de recursos: fácil integración con la mano de obra existente.",
+                    "Escalabilidad: adecuado para escalado horizontal o vertical.",
+                    "Facilidad operativa: integración en procesos diarios posible.",
+                    "Adaptabilidad: se puede adaptar modularmente a diferentes necesidades."
+                ],
+                simCons: [
+                    "Costo de tiempo: se requiere tiempo de planificación y coordinación.",
+                    "Desafíos técnicos: pueden surgir problemas de compatibilidad.",
+                    "Deficiencia de datos: falta de datos suficientes para decisiones.",
+                    "Dependencia externa: dependencia de servicios de terceros.",
+                    "Adopción del usuario: resistencia al cambio de proceso."
+                ],
+                simRecommendation: "Recomendación: pruebe {title} con una pequeña aplicación piloto.",
+                simEstimatedImpact: "{percent}% (impacto estimado para los primeros 6-12 meses)",
+                simAutoNote: "Una iniciativa estratégica centrada en {title} para apoyar el objetivo {purpose}.",
+                simSummary: "A la luz de las evaluaciones estratégicas; la idea <strong>{title}</strong> tiene el potencial de jugar un papel crítico en el logro de los objetivos de <em>{purpose}</em> de la organización. {randomTheme} Puede particularmente {randomVerb} la estructura actual en áreas de gestión de recursos y mejora de procesos. Las proyecciones a largo plazo indican que esta iniciativa podría proporcionar una ventaja competitiva sostenible.",
+                geminiAnalysisPrompt: `
+            Eres un analista de negocios estratégico estricto y crítico. Tu tarea es evaluar la siguiente idea contra el Objetivo del Grupo específico.
+            Idea: {title}
+            Nota: {note}
+            Objetivo del Grupo: {purpose}
+
+            INSTRUCCIONES CRÍTICAS:
+            1. **ALINEACIÓN CONTEXTUAL (CRUCIAL):** Compara estrictamente la naturaleza de la Idea con el Objetivo del Grupo.
+               - Si el objetivo es DIGITAL (ej. "Software", "App", "Plataforma Online") y la idea es FÍSICA (ej. "Abrir un Café", "Fabricación"), puntúa exactamente 0.
+               - Si el objetivo es FÍSICO y la idea es puramente DIGITAL, puntúa exactamente 0.
+            2. **VIABILIDAD LÓGICA:** Si la idea es lógicamente imposible o completamente irrealista dentro del contexto, puntúa exactamente 0.
+            3. Si el "aiScore" es 0, el "summary" debe explicar claramente la desalineación (ej. "Desajuste de contexto: Digital vs Físico").
+            4. Si está alineado y es lógico, puntúa entre 60 y 100 basado en viabilidad e impacto.
+            5. Sé directo y conciso. Evita el relleno.
+
+            Por favor proporciona la salida SOLO en el siguiente formato JSON (sin Markdown):
+            {
+                "correctedTitle": "La versión corregida del título de la idea",
+                "correctedNote": "La versión corregida de la nota",
+                "summary": "Un resumen de análisis profesional y detallado (usa texto plano, sin etiquetas HTML)",
+                "pros": ["Pro 1", "Pro 2", "Pro 3"],
+                "cons": ["Contra 1", "Contra 2"],
+                "recommendation": "Una breve recomendación estratégica",
+                "estimatedImpact": "Porcentaje de impacto estimado (ej. %85)",
+                "aiScore": 75 (un número entero entre 60 y 100)
+            }
+            `,
+                geminiQuestionPrompt: `
+            Eres un analista de negocios estratégico directo y sin rodeos.
+            Objetivo del Grupo: "{purpose}"
+            Idea: "{title}" ({note})
+            Análisis Actual: {analysis}
+            
+            Pregunta del Usuario: "{question}"
+            Proporciona una respuesta directa, neta y concisa. No repitas el análisis a menos que sea necesario.
+            Si el usuario pregunta sobre la viabilidad ("podemos", "es posible"), da un "Sí" o "No" definitivo con una razón basada en el análisis. No sugieras "probarlo".
+            `
+            },
+            fr: {
+                pageTitle: "Strategist Pro - Analyse Détaillée",
+                apiSettings: "Paramètres API",
+                saveAsPdf: "Enregistrer en PDF",
+                groupPurpose: "Objectif du Groupe",
+                groupPurposePlaceholder: "Quel est l'objectif principal de ce groupe ? (ex: Augmenter l'efficacité)",
+                ideas: "Idées",
+                ideaTitlePlaceholder: "Titre de l'idée...",
+                ideaNotePlaceholder: "Brève description...",
+                addIdea: "+ Nouvelle Idée",
+                startAnalysis: "Lancer l'Analyse",
+                analyzing: "Analyse en cours...",
+                placeholderText: "Commencez l'analyse en entrant vos idées...",
+                finalRanking: "Classement Final",
+                objective: "OBJECTIF :",
+                rank: "Rang",
+                ideaAndOutput: "Idée & Résultat de l'Analyse",
+                aiScore: "Score IA",
+                userAction: "Action Utilisateur",
+                userScore: "Score Utilisateur",
+                sortByAi: "Trier par Score IA",
+                sortByUser: "Trier par Score Utilisateur",
+                chartTitle: "Graphique de Comparaison des Scores",
+                confirmPdfTitle: "Créer PDF ?",
+                confirmPdfBody: "Votre rapport d'analyse, tableau de scores et graphique de comparaison seront préparés en PDF.",
+                cancel: "Annuler",
+                confirmSave: "Oui, Enregistrer",
+                geminiApiSettings: "Paramètres API Gemini",
+                geminiApiDescription: "Entrez votre clé API Google pour une analyse en temps réel. Votre clé est stockée uniquement dans votre navigateur.",
+                apiKeyInput: "AIzaSy...",
+                save: "Enregistrer",
+                simulationMode: "Si aucune clé n'est entrée, le système fonctionne en mode simulation.",
+                addIdeaAndAnalyze: "+ Ajouter Idée & Analyser",
+                undo: "Annuler",
+                reset: "Tout Réinitialiser",
+                errorMinOneIdea: "Veuillez entrer au moins une idée.",
+                alertApiSuccess: "Clé API enregistrée avec succès. L'IA réelle sera maintenant utilisée.",
+                alertApiSession: "La clé API est définie pour cette session. En raison des restrictions du navigateur, la clé n'a pas pu être enregistrée de manière permanente.",
+                errorNoUndo: "Aucune action à annuler.",
+                aiReportBadge: "Rapport d'Analyse Stratégique IA",
+                aiScoreLabel: "Score IA :",
+                logout: "DÉCONNEXION",
+                loginTitle: "Connexion",
+                loginSubtitle: "Connectez-vous pour accéder à vos idées.",
+                usernamePlaceholder: "Nom d'utilisateur",
+                passwordPlaceholder: "Mot de passe",
+                emailPlaceholder: "Adresse e-mail",
+                confirmPasswordPlaceholder: "Confirmer le mot de passe",
+                loginButton: "Connexion",
+                noAccount: "Pas de compte ? S'inscrire",
+                registerTitle: "S'inscrire",
+                registerSubtitle: "Créer un nouveau compte.",
+                registerButton: "S'inscrire",
+                hasAccount: "Déjà un compte ? Connexion",
+                confirmReset: "Êtes-vous sûr de vouloir réinitialiser toutes les idées et analyses ? Cela ne peut pas être annulé.",
+                delete: "Supprimer",
+                analysisOutput: "Résultat de l'Analyse :",
+                pros: "Avantages (+)",
+                cons: "Inconvénients (-)",
+                askAiPlaceholder: "Posez une question sur cette idée à l'IA...",
+                askAiButton: "Demander à l'IA",
+                optionalTitle: "Titre (optionnel)",
+                notePlaceholder: "Sous-description ou note",
+                addNote: "Ajouter Note",
+                promptNewIdea: "Nouveau titre d'idée (court) :",
+                promptNewNote: "Courte note (optionnel) :",
+                defaultPurpose: "Objectif Stratégique Général",
+                aiThinking: "L'IA réfléchit...",
+                aiResponse: "Réponse IA",
+                inResponseTo: "en réponse à :",
+                errorIdeaNotFound: "Désolé, cette idée est introuvable. Veuillez actualiser la page et réessayer.",
+                summary: "Résumé",
+                errorCredentials: "Nom d'utilisateur ou mot de passe invalide.",
+                errorUserExists: "Ce nom d'utilisateur est déjà pris.",
+                errorFieldEmpty: "Tous les champs sont obligatoires.",
+                errorInvalidEmail: "Veuillez entrer une adresse e-mail valide.",
+                errorPasswordMismatch: "Les mots de passe ne correspondent pas.",
+                errorPasswordComplexity: "Le mot de passe doit comporter au moins 8 caractères, avec une majuscule et une minuscule.",
+                registerSuccess: "Inscription réussie ! Vous pouvez maintenant vous connecter.",
+                welcomeBack: "Bon retour, '{username}' !",
+                welcomeNew: "Bienvenue, '{username}' ! Votre compte a été créé.",
+                confirmLogout: "Êtes-vous sûr de vouloir vous déconnecter ?",
+                forgotPassword: "Mot de passe oublié ?",
+                demoLogin: "Connexion Démo",
+                forgotPasswordTitle: "Réinitialiser le mot de passe",
+                forgotPasswordSubtitle: "Un code de vérification sera envoyé à votre e-mail.",
+                sendCodeButton: "Envoyer le Code",
+                codePlaceholder: "Code de Vérification",
+                newPasswordPlaceholder: "Nouveau Mot de Passe",
+                resetPasswordButton: "Mettre à jour le mot de passe",
+                backToLogin: "Retour à la Connexion",
+                codeSentAlert: "Code de Vérification : {code}\n(Dans une vraie application, cela serait envoyé par e-mail)",
+                resetSuccess: "Mot de passe mis à jour avec succès. Veuillez vous connecter.",
+                errorEmailNotFound: "Adresse e-mail introuvable.",
+                errorCodeInvalid: "Code de vérification invalide.",
+                demoUser: "Invité",
+                shortDesc: "Description Courte",
+                detailedReview: "Revue Détaillée",
+                reviewIntro: "Cette section discute des impacts attendus, de la facilité de mise en œuvre et des principaux facteurs de risque de l'idée.",
+                expectedImpact: "Impact Attendu",
+                impactVerbs: ["accélérer", "optimiser", "transformer", "renforcer"],
+                misalignedSummary: "<strong>IDÉE NON ALIGNÉE :</strong> Cette idée ne montre pas d'alignement direct avec l'objectif du groupe de <em>{purpose}</em>. Par conséquent, sa priorité stratégique est faible et l'allocation de ressources n'est pas recommandée.",
+                misalignedCons: "Ne s'aligne pas avec l'objectif principal du groupe.",
+                misalignedRec: "Recommandation : Ne pas procéder. Réévaluer l'idée en fonction des objectifs.",
+                simThemes: [
+                    "pourrait créer un effet de levier stratégique.",
+                    "est critique pour la durabilité à long terme.",
+                    "a le potentiel d'augmenter l'efficacité opérationnelle actuelle.",
+                    "est une approche innovante qui sert directement l'objectif.",
+                    "se distingue par sa facilité de mise en œuvre et son faible coût."
+                ],
+                simPros: [
+                    "Rentable : les coûts de mise en œuvre sont relativement faibles.",
+                    "Pilote rapide : peut être testé rapidement avec des pilotes à petite échelle.",
+                    "Compatibilité des ressources : intégration facile avec la main-d'œuvre existante.",
+                    "Évolutivité : adapté à une mise à l'échelle horizontale ou verticale.",
+                    "Facilité opérationnelle : intégration dans les processus quotidiens possible.",
+                    "Adaptabilité : peut être adapté de manière modulaire à différents besoins."
+                ],
+                simCons: [
+                    "Coût en temps : temps de planification et de coordination nécessaire.",
+                    "Défis techniques : problèmes de compatibilité possibles.",
+                    "Carence en données : manque de données suffisantes pour les décisions.",
+                    "Dépendance externe : dépendance vis-à-vis de tiers.",
+                    "Adoption par l'utilisateur : résistance au changement de processus."
+                ],
+                simRecommendation: "Recommandation : testez {title} avec une petite application pilote.",
+                simEstimatedImpact: "{percent}% (impact estimé pour les 6-12 premiers mois)",
+                simAutoNote: "Une initiative stratégique axée sur {title} pour soutenir l'objectif {purpose}.",
+                simSummary: "À la lumière des évaluations stratégiques ; l'idée <strong>{title}</strong> a le potentiel de jouer un rôle critique dans la réalisation des objectifs de <em>{purpose}</em> de l'organisation. {randomTheme} Elle peut particulièrement {randomVerb} la structure actuelle dans les domaines de la gestion des ressources et de l'amélioration des processus. Les projections à long terme indiquent que cette initiative pourrait fournir un avantage concurrentiel durable.",
+                geminiAnalysisPrompt: `
+            Vous êtes un analyste commercial stratégique strict et critique. Votre tâche est d'évaluer l'idée suivante par rapport à l'Objectif du Groupe spécifique.
+            Idée : {title}
+            Note : {note}
+            Objectif du Groupe : {purpose}
+
+            INSTRUCTIONS CRITIQUES :
+            1. **ALIGNEMENT CONTEXTUEL (CRUCIAL) :** Comparez strictement la nature de l'Idée avec l'Objectif du Groupe.
+               - Si l'objectif est NUMÉRIQUE (ex : "Logiciel", "App", "Plateforme en ligne") et l'idée est PHYSIQUE (ex : "Ouvrir un Café", "Fabrication"), donnez exactement 0 point.
+               - Si l'objectif est PHYSIQUE et l'idée est purement NUMÉRIQUE, donnez exactement 0 point.
+            2. **FAISABILITÉ LOGIQUE :** Si l'idée est logiquement impossible ou complètement irréaliste dans le contexte, donnez exactement 0 point.
+            3. Si le "aiScore" est 0, le "summary" doit expliquer clairement le désalignement (ex : "Désalignement contextuel : Numérique vs Physique").
+            4. Si aligné et logique, notez entre 60 et 100 en fonction de la faisabilité et de l'impact.
+            5. Soyez direct et concis. Évitez le remplissage.
+
+            Veuillez fournir la sortie UNIQUEMENT au format JSON suivant (pas de Markdown) :
+            {
+                "correctedTitle": "La version corrigée du titre de l'idée",
+                "correctedNote": "La version corrigée de la note",
+                "summary": "Un résumé d'analyse professionnel et détaillé (utilisez du texte brut, pas de balises HTML)",
+                "pros": ["Avantage 1", "Avantage 2", "Avantage 3"],
+                "cons": ["Inconvénient 1", "Inconvénient 2"],
+                "recommendation": "Une brève recommandation stratégique",
+                "estimatedImpact": "Pourcentage d'impact estimé (ex : %85)",
+                "aiScore": 75 (un entier entre 60 et 100)
+            }
+            `,
+                geminiQuestionPrompt: `
+            Vous êtes un analyste commercial stratégique direct et pragmatique.
+            Objectif du Groupe : "{purpose}"
+            Idée : "{title}" ({note})
+            Analyse Actuelle : {analysis}
+            
+            Question Utilisateur : "{question}"
+            Fournissez une réponse directe, nette et concise. Ne répétez pas l'analyse sauf si nécessaire.
+            Si l'utilisateur pose des questions sur la faisabilité ("pouvons-nous", "est-ce possible"), donnez un "Oui" ou "Non" définitif avec une raison basée sur l'analyse. Ne suggérez pas d'"essayer".
+            `
+            }
+        };
+
+        // KULLANICI AYARI: API Anahtarınızı tırnak içine yazarak sabitleyebilirsiniz.
+        // Örnek: const HARDCODED_KEY = "AIzaSy...";
+        const HARDCODED_KEY = "";
+        let geminiApiKey = '';
+        try {
+            // Tarayıcı hafızasından anahtarı okumayı dene
+            geminiApiKey = HARDCODED_KEY || localStorage.getItem('gemini_api_key') || '';
+        } catch (e) {
+            console.warn("Tarayıcı kısıtlamaları nedeniyle localStorage'a erişilemiyor. API anahtarı oturumlar arasında saklanmayacak.");
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const sessionUser = sessionStorage.getItem('currentUser');
+            if (sessionUser) {
+                currentUser = sessionUser;
+                hideAuthModal();
+                loadUserData(currentUser);
+            } else {
+                showAuthModal();
+            }
+
+            let savedLang = 'tr';
+            try {
+                savedLang = localStorage.getItem('preferred_lang') || 'tr';
+            } catch (e) {
+                // ignore
+            }
+            setLanguage(savedLang);
+        });
+
+        function showAuthModal() {
+            document.getElementById('authModal').classList.remove('hidden');
+            document.getElementById('authModal').classList.add('flex');
+            document.querySelector('main').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+        }
+
+        function hideAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+            document.getElementById('authModal').classList.remove('flex');
+            document.querySelector('main').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+        }
+
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('forgotPasswordForm').classList.add('hidden');
+            document.getElementById('loginError').innerText = '';
+            document.getElementById('registerError').innerText = '';
+        }
+
+        function showRegisterForm() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('forgotPasswordForm').classList.add('hidden');
+            document.getElementById('loginError').innerText = '';
+            document.getElementById('registerError').innerText = '';
+        }
+
+        function showForgotPasswordForm() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('forgotPasswordForm').classList.remove('hidden');
+            document.getElementById('forgotStep1').classList.remove('hidden');
+            document.getElementById('forgotStep2').classList.add('hidden');
+            document.getElementById('forgotError').innerText = '';
+        }
+
+        function getUsers() {
+            try {
+                return JSON.parse(localStorage.getItem('strategist_users')) || {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveUsers(users) {
+            try {
+                localStorage.setItem('strategist_users', JSON.stringify(users));
+            } catch (e) {
+                console.error("Could not save users to localStorage.");
+            }
+        }
+
+        function handleRegister() {
+            const username = document.getElementById('registerUsername').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            const errorEl = document.getElementById('registerError');
+            errorEl.innerText = '';
+
+            if (!username || !password || !email || !passwordConfirm) {
+                errorEl.innerText = translations[currentLang].errorFieldEmpty;
+                return;
+            }
+            if (password !== passwordConfirm) {
+                errorEl.innerText = translations[currentLang].errorPasswordMismatch;
+                return;
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                errorEl.innerText = translations[currentLang].errorInvalidEmail;
+                return;
+            }
+            const passRegex = /^(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
+            if (!passRegex.test(password)) {
+                errorEl.innerText = translations[currentLang].errorPasswordComplexity;
+                return;
+            }
+
+            const users = getUsers();
+            if (users[username]) {
+                errorEl.innerText = translations[currentLang].errorUserExists;
+                return;
+            }
+
+            users[username] = { password: password, email: email }; // Insecure, for simulation only
+            saveUsers(users);
+
+            showLoginForm();
+            document.getElementById('loginSuccess').innerText = translations[currentLang].registerSuccess;
+        }
+
+        function handleLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+            errorEl.innerText = '';
+            document.getElementById('loginSuccess').innerText = '';
+
+            if (!username || !password) {
+                errorEl.innerText = translations[currentLang].errorFieldEmpty;
+                return;
+            }
+
+            const users = getUsers();
+            const userRecord = users[username];
+            let storedPassword;
+
+            // Eski ve yeni veri yapısı uyumluluğu
+            if (typeof userRecord === 'string') {
+                storedPassword = userRecord;
+            } else if (userRecord && userRecord.password) {
+                storedPassword = userRecord.password;
+            }
+
+            if (!storedPassword || storedPassword !== password) {
+                errorEl.innerText = translations[currentLang].errorCredentials;
+                return;
+            }
+
+            currentUser = username;
+            sessionStorage.setItem('currentUser', username);
+            hideAuthModal();
+            loadUserData(username);
+            alert(translations[currentLang].welcomeBack.replace('{username}', username));
+        }
+
+        function handleDemoLogin() {
+            currentUser = translations[currentLang].demoUser;
+            // Demo kullanıcıyı session'a kaydetmiyoruz ki yenileyince tekrar sorsun
+            hideAuthModal();
+            loadUserData('demo_temp_user'); // Geçici bir alan kullan
+            alert(translations[currentLang].welcomeBack.replace('{username}', currentUser));
+        }
+
+        function handleSendCode() {
+            const email = document.getElementById('forgotEmail').value.trim();
+            const errorEl = document.getElementById('forgotError');
+            errorEl.innerText = '';
+
+            if (!email) {
+                errorEl.innerText = translations[currentLang].errorFieldEmpty;
+                return;
+            }
+
+            // E-posta kontrolü (Simülasyon: LocalStorage'da var mı?)
+            const users = getUsers();
+            let foundUser = null;
+            for (const [username, data] of Object.entries(users)) {
+                if (data.email === email) {
+                    foundUser = username;
+                    break;
+                }
+            }
+
+            if (!foundUser) {
+                errorEl.innerText = translations[currentLang].errorEmailNotFound;
+                return;
+            }
+
+            // Kod üret ve göster
+            generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+            alert(translations[currentLang].codeSentAlert.replace('{code}', generatedCode));
+
+            // 2. Adıma geç
+            document.getElementById('forgotStep1').classList.add('hidden');
+            document.getElementById('forgotStep2').classList.remove('hidden');
+            // Kullanıcı adını sakla ki şifreyi güncelleyebilelim
+            document.getElementById('forgotPasswordForm').dataset.resetUser = foundUser;
+        }
+
+        function handleResetPassword() {
+            const code = document.getElementById('forgotCode').value.trim();
+            const newPass = document.getElementById('newPassword').value;
+            const errorEl = document.getElementById('forgotError');
+            const username = document.getElementById('forgotPasswordForm').dataset.resetUser;
+
+            if (code !== generatedCode) {
+                errorEl.innerText = translations[currentLang].errorCodeInvalid;
+                return;
+            }
+
+            // Şifre karmaşıklık kontrolü burada da yapılabilir ama basitlik için geçiyorum
+            if (!newPass) {
+                errorEl.innerText = translations[currentLang].errorFieldEmpty;
+                return;
+            }
+
+            const users = getUsers();
+            users[username].password = newPass;
+            saveUsers(users);
+
+            alert(translations[currentLang].resetSuccess);
+            showLoginForm();
+        }
+
+        function handleLogout() {
+            const confirmLogout = confirm(translations[currentLang].confirmLogout);
+            if (confirmLogout) {
+                saveUserData(); // Save before logging out
+                currentUser = null;
+                sessionStorage.removeItem('currentUser');
+                resetAll(false); // Reset board without saving to history
+
+                // Form alanlarını temizle
+                document.getElementById('loginUsername').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('registerUsername').value = '';
+                document.getElementById('registerEmail').value = '';
+                document.getElementById('registerPassword').value = '';
+                document.getElementById('registerPasswordConfirm').value = '';
+
+                showAuthModal();
+                showLoginForm();
+            }
+        }
+
+        function saveUserData() {
+            if (!currentUser) return;
+            try {
+                const dataToSave = {
+                    ideas: currentIdeas,
+                    purpose: document.getElementById('groupPurpose').value,
+                };
+                localStorage.setItem(`strategist_data_${currentUser}`, JSON.stringify(dataToSave));
+            } catch (e) {
+                console.warn("Could not save user data to localStorage.");
+            }
+        }
+
+        function loadUserData(username) {
+            try {
+                const savedData = localStorage.getItem(`strategist_data_${username}`);
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    currentIdeas = data.ideas || [];
+                    document.getElementById('groupPurpose').value = data.purpose || '';
+
+                    if (currentIdeas.length > 0) {
+                        document.getElementById('placeholder').style.display = 'none';
+                        document.getElementById('purposeDisplay').innerText = `${translations[currentLang].objective} ${data.purpose || translations[currentLang].defaultPurpose}`;
+                        document.getElementById('rankingSection').classList.remove('hidden');
+                        document.getElementById('chartContainer').style.display = 'block';
+                        document.getElementById('addIdeaBtn').style.display = 'none';
+                        showAddAfterButton();
+                        renderAllDynamicContent();
+                    } else {
+                        resetAll(false);
+                    }
+                } else {
+                    resetAll(false);
+                }
+            } catch (e) {
+                console.error("Could not load user data:", e);
+                resetAll(false); // Reset on error
+            }
+            checkApiKey();
+        }
+
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+            } else {
+                input.type = "password";
+            }
+        }
+
+        function checkApiKey() {
+            if (!geminiApiKey) {
+                const banner = document.getElementById('apiKeyBanner');
+                if (banner) banner.classList.remove('hidden');
+            }
+        }
+
+        function toggleLanguageMenu() {
+            const menu = document.getElementById('languageMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Menü dışına tıklanınca kapat
+        window.addEventListener('click', function (e) {
+            const menu = document.getElementById('languageMenu');
+            const btn = document.querySelector('button[onclick="toggleLanguageMenu()"]');
+            if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        function setLanguage(lang) {
+            if (!translations[lang]) return;
+            currentLang = lang;
+            try {
+                localStorage.setItem('preferred_lang', lang);
+            } catch (e) {
+                console.warn('Could not save language preference.');
+            }
+
+            // Menüdeki aktif dili vurgula (Dinamik)
+            const menu = document.getElementById('languageMenu');
+            const buttons = menu.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.className = "w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2";
+            });
+
+            const activeBtn = document.getElementById(`btn-lang-${lang}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-600');
+                activeBtn.classList.add('text-blue-600', 'bg-blue-50');
+            }
+
+            // Update all elements with data-translate-key
+            document.querySelectorAll('[data-translate-key]').forEach(el => {
+                const key = el.dataset.translateKey;
+                const translation = translations[lang][key];
+                if (translation) {
+                    if (el.placeholder) {
+                        el.placeholder = translation;
+                    } else {
+                        el.innerText = translation;
+                    }
+                }
+            });
+
+            document.title = translations[lang].pageTitle;
+            document.documentElement.lang = lang;
+            renderAllDynamicContent();
+        }
+
+        function pushHistory() {
+            // state snapshot
+            const inputs = getInputSnapshot();
+            historyStack.push({
+                ideas: JSON.parse(JSON.stringify(currentIdeas)),
+                inputs: inputs
+            });
+            // makul bir sınır
+            if (historyStack.length > 50) historyStack.shift();
+            saveUserData();
+        }
+
+        function openSettings() {
+            document.getElementById('apiKeyInput').value = geminiApiKey;
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function saveSettings() {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            try {
+                geminiApiKey = key;
+                localStorage.setItem('gemini_api_key', key);
+                closeSettings();
+                alert(translations[currentLang].alertApiSuccess);
+                document.getElementById('apiKeyBanner').classList.add('hidden');
+            } catch (e) {
+                // Eğer localStorage çalışmıyorsa, anahtarı sadece bu oturum için ayarla ve kullanıcıyı bilgilendir.
+                geminiApiKey = key;
+                closeSettings();
+                alert(translations[currentLang].alertApiSession);
+                document.getElementById('apiKeyBanner').classList.add('hidden');
+            }
+        }
+
+        function getInputSnapshot() {
+            return Array.from(document.querySelectorAll('#inputContainer > div')).map(div => {
+                return {
+                    title: div.querySelector('.idea-input').value,
+                    note: div.querySelector('.note-input').value,
+                    id: div.dataset.id || ''
+                };
+            });
+        }
+
+        function createInputDiv(item) {
+            const div = document.createElement('div');
+            div.className = 'flex flex-col md:flex-row gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 relative';
+            if (item && item.id) div.dataset.id = item.id;
+            div.innerHTML = `
+                                                     <div class="flex-grow space-y-2">
+                                                          <input type="text" class="idea-input w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500" placeholder="${translations[currentLang].ideaTitlePlaceholder}" value="${item && item.title ? escapeHtml(item.title) : ''}">
+                                                              <textarea class="note-input w-full p-3 border border-slate-200 rounded-xl outline-none text-xs font-medium h-16 resize-none focus:border-blue-500" placeholder="${translations[currentLang].ideaNotePlaceholder}">${item && item.note ? escapeHtml(item.note) : ''}</textarea>
+                                                      </div>
+                                                      <button onclick="removeInputDiv(this)" class="p-2 text-slate-300 hover:text-rose-500 no-print self-center">
+                                                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                      </button>
+                                                      `;
+            return div;
+        }
+
+        function restoreInputs(snapshot) {
+            const container = document.getElementById('inputContainer');
+            container.innerHTML = '';
+            snapshot.forEach(item => {
+                container.appendChild(createInputDiv(item));
+            });
+        }
+
+        function undoLast() {
+            if (historyStack.length === 0) {
+                alert(translations[currentLang].errorNoUndo);
+                return;
+            }
+            const last = historyStack.pop();
+            currentIdeas = JSON.parse(JSON.stringify(last.ideas));
+            restoreInputs(last.inputs);
+
+            // UI güncellemesi ve dil
+            const resultsContainer = document.getElementById('resultsContainer');
+            if (currentIdeas.length === 0) {
+                resultsContainer.innerHTML = `<div id="placeholder" data-translate-key="placeholderText" class="py-20 text-center opacity-30 italic font-bold text-slate-400">${translations[currentLang].placeholderText}</div>`;
+                document.getElementById('rankingSection').classList.add('hidden');
+                document.getElementById('chartContainer').style.display = 'none';
+                const addBtn = document.getElementById('addIdeaBtn');
+                if (addBtn) addBtn.style.display = 'flex';
+            } else {
+                resultsContainer.innerHTML = '';
+                currentIdeas.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = `idea-card animate-pop w-full mx-auto ${item.aiScore === 0 ? 'misaligned-card' : ''}`;
+                    card.id = item.id;
+                    card.innerHTML = renderCardHtml(item);
+                    resultsContainer.appendChild(card);
+                });
+                document.getElementById('purposeDisplay').innerText = `${translations[currentLang].objective} ${document.getElementById('groupPurpose').value.trim() || translations[currentLang].defaultPurpose}`;
+                document.getElementById('rankingSection').classList.remove('hidden');
+                document.getElementById('chartContainer').style.display = 'block';
+                const addBtn = document.getElementById('addIdeaBtn');
+                if (addBtn) addBtn.style.display = 'none';
+            }
+            setLanguage(currentLang); // Metinleri yeniden uygula
+            saveUserData();
+            showAddAfterButton();
+        }
+
+        function renderAllDynamicContent() {
+            if (currentIdeas.length > 0) {
+                const resultsContainer = document.getElementById('resultsContainer');
+                resultsContainer.innerHTML = '';
+                currentIdeas.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = `idea-card animate-pop w-full mx-auto ${item.aiScore === 0 ? 'misaligned-card' : ''}`;
+                    card.id = item.id;
+                    card.innerHTML = renderCardHtml(item);
+                    resultsContainer.appendChild(card);
+                });
+                renderRankingTable();
+                updateChart();
+                saveUserData();
+            }
+        }
+
+        function generateSimulatedAnalysis(title, note, purpose) {
+            const lang = currentLang;
+            const themes = translations[lang].simThemes;
+
+            // deterministik puan hesaplama
+            function hashString(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    hash = (hash << 5) - hash + str.charCodeAt(i);
+                    hash |= 0;
+                }
+                return hash;
+            }
+            function seededShuffle(arr, seed) {
+                const res = arr.slice();
+                let s = seed;
+                for (let i = res.length - 1; i > 0; i--) {
+                    s = (s * 9301 + 49297) % 233280;
+                    const j = Math.floor((s / 233280) * (i + 1));
+                    [res[i], res[j]] = [res[j], res[i]];
+                }
+                return res;
+            }
+
+            const seed = (hashString(title + '|' + note + '|' + purpose) >>> 0);
+            const isMisaligned = seed % 7 === 0; // 1/7 chance of being misaligned for simulation
+            let aiScore;
+            let summary;
+            let recommendation;
+            let pros, cons;
+
+            if (isMisaligned) {
+                aiScore = 0;
+                summary = translations[lang].misalignedSummary.replace('{purpose}', purpose);
+                pros = [];
+                cons = [translations[lang].misalignedCons];
+                recommendation = translations[lang].misalignedRec;
+            } else {
+                const base = seed % 41;
+                aiScore = 60 + base; // 60-100 aralığında
+                const randomTheme = themes[seed % themes.length];
+                const impactVerbs = translations[lang].impactVerbs;
+                const randomVerb = impactVerbs[seed % impactVerbs.length];
+                summary = translations[lang].simSummary
+                    .replace('{title}', title)
+                    .replace('{purpose}', purpose)
+                    .replace('{randomTheme}', randomTheme)
+                    .replace('{randomVerb}', randomVerb);
+                pros = seededShuffle(translations[lang].simPros, seed).slice(0, 3 + (seed % 2));
+                cons = seededShuffle(translations[lang].simCons, seed + 1).slice(0, 2 + (seed % 2));
+                recommendation = translations[lang].simRecommendation.replace('{title}', escapeHtml(title));
+            }
+
+            const prosTemplates = translations[lang].simPros;
+            const consTemplates = translations[lang].simCons;
+
+            const displayNote = note ? note : translations[lang].simAutoNote
+                .replace('{title}', escapeHtml(title))
+                .replace('{purpose}', escapeHtml(purpose));
+
+            const prosHtml = pros.map(p => `<li>${p}</li>`).join('');
+            const consHtml = cons.map(c => `<li>${c}</li>`).join('');
+            // Puan ve etki tutarlılığı için aynı değeri kullanıyoruz
+            const estimatedImpact = translations[lang].simEstimatedImpact.replace('{percent}', aiScore);
+
+            const detailed = `
+                                                      <div>
+                                                          <p><strong>${translations[lang].summary || 'Özet'}:</strong> ${summary}</p>
+                                                          <p><strong>${translations[lang].shortDesc || 'Kısa Açıklama'}:</strong> ${displayNote}</p>
+                                                          <p><strong>${translations[lang].detailedReview || 'Detaylı İnceleme'}:</strong></p>
+                                                          <p>${translations[lang].reviewIntro || 'Bu bölümde fikrin beklenen etkileri, uygulama kolaylığı ve ana risk faktörleri üzerinde durulmuştur.'}</p>
+                                                          <p><strong>${translations[lang].expectedImpact || 'Beklenen Etki'}:</strong> ${estimatedImpact}</p>
+                                                      </div>
+                                                      `;
+
+            return {
+                text: detailed,
+                pros: pros,
+                cons: cons,
+                recommendation: recommendation,
+                estimatedImpact: estimatedImpact,
+                aiScore: aiScore
+            };
+        }
+
+        async function generateRealGeminiAnalysis(title, note, purpose) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`;
+
+            const prompt = translations[currentLang].geminiAnalysisPrompt
+                .replace('{title}', escapeHtml(title))
+                .replace('{note}', escapeHtml(note))
+                .replace('{purpose}', escapeHtml(purpose));
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { response_mime_type: "application/json" }
+                    })
+                });
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+                const text = data.candidates[0].content.parts[0].text;
+                // Güvenlik: JSON'dan önce ve sonra olabilecek metinleri temizle
+                const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+                const json = JSON.parse(jsonString);
+                json.aiScore = parseInt(json.aiScore, 10); // Puanın sayı olduğundan emin ol
+                return json;
+            } catch (error) {
+                console.error("Gemini API Hatası:", error);
+                return null; // Hata durumunda simülasyona düşmek için
+            }
+        }
+
+        async function translateInput(title, note, targetLang) {
+            if (!geminiApiKey) return { title, note };
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`;
+            const prompt = `
+            Translate the values in the following JSON object to ${targetLang}.
+            Provide the output ONLY in the same JSON format (no Markdown).
+
+            Input:
+            {
+                "title": "${escapeHtml(title)}",
+                "note": "${escapeHtml(note)}"
+            }
+
+            Output:
+            `;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { response_mime_type: "application/json" }
+                    })
+                });
+                const data = await response.json();
+                if (data.error) {
+                    console.error("Translation API Error:", data.error.message);
+                    return { title, note };
+                }
+                const translated = JSON.parse(data.candidates[0].content.parts[0].text);
+                return {
+                    title: translated.title || title,
+                    note: translated.note || note
+                };
+            } catch (error) {
+                console.error("Translation fetch error:", error);
+                return { title, note };
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+        }
+
+        // input satırlarındaki sil tuşunun sadece girdiyi değil
+        // eğer analiz yapılmışsa ilişkili kartı ve tablo satırını silmesini sağlar
+        function removeInputDiv(button) {
+            const div = button.parentElement;
+            const title = div.querySelector('.idea-input')?.value.trim();
+            const note = div.querySelector('.note-input')?.value.trim();
+            div.remove();
+            if (title) {
+                const idea = currentIdeas.find(i => i.title === title && i.note === note);
+                if (idea) {
+                    deleteIdea(idea.id);
+                }
+            }
+        }
+
+        function addInput() {
+            const container = document.getElementById('inputContainer');
+            const div = document.createElement('div');
+            div.className = 'flex flex-col md:flex-row gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 relative';
+            // yeni eklenen her satıra yeni id ataması saklanır ama analiz edilmemiştir
+            div.dataset.id = '';
+            div.innerHTML = `
+                                                      <div class="flex-grow space-y-2">
+                                                          <input type="text" class="idea-input w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500" placeholder="${translations[currentLang].ideaTitlePlaceholder}">
+                                                              <textarea class="note-input w-full p-3 border border-slate-200 rounded-xl outline-none text-xs font-medium h-16 resize-none focus:border-blue-500" placeholder="${translations[currentLang].ideaNotePlaceholder}"></textarea>
+                                                      </div>
+                                                      <button onclick="removeInputDiv(this)" class="p-2 text-slate-300 hover:text-rose-500 no-print self-center">
+                                                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                      </button>
+                                                      `;
+            container.appendChild(div);
+        }
+
+        function processAndGenerate() {
+            pushHistory();
+            const purpose = document.getElementById('groupPurpose').value.trim() || translations[currentLang].defaultPurpose;
+            const inputs = document.querySelectorAll('#inputContainer > div');
+
+            // Giriş kontrolü
+            let hasContent = false;
+            inputs.forEach(el => {
+                if (el.querySelector('.idea-input').value.trim() !== '') hasContent = true;
+            });
+
+            if (!hasContent) {
+                alert(translations[currentLang].errorMinOneIdea);
+                return;
+            }
+
+            // Buton durumunu güncelle (Geri bildirim için)
+            const startBtn = document.getElementById('startAnalysisBtn');
+            const originalText = startBtn.innerText;
+            startBtn.disabled = true;
+
+            const translationNeeded = currentLang !== 'tr' && geminiApiKey && Array.from(inputs).some(el => {
+                const title = el.querySelector('.idea-input').value;
+                const note = el.querySelector('.note-input').value;
+                return /[çğıöşüÇĞİÖŞÜ]/.test(title + note);
+            });
+
+            if (translationNeeded) {
+                startBtn.innerText = "Translating...";
+            } else {
+                startBtn.innerText = translations[currentLang].analyzing;
+            }
+
+            // Yapay zeka düşünme süresi simülasyonu (2 saniye)
+            setTimeout(async () => {
+                try {
+                    const inputsArr = Array.from(inputs);
+                    const newIdeasData = [];
+
+                    for (const el of inputsArr) {
+                        // Otomatik Düzeltme ve İyileştirme (Auto-Correction)
+                        const smartFix = (txt) => {
+                            if (!txt) return '';
+                            let t = txt.trim().replace(/\s+/g, ' '); // Fazla boşlukları temizle
+                            if (t.length > 0) t = t.charAt(0).toUpperCase() + t.slice(1); // İlk harfi büyüt
+                            return t;
+                        };
+
+                        let title = smartFix(el.querySelector('.idea-input').value);
+                        let note = smartFix(el.querySelector('.note-input').value);
+
+                        // Auto-translation logic
+                        if (currentLang !== 'tr' && geminiApiKey && /[çğıöşüÇĞİÖŞÜ]/.test(title + note)) {
+                            const translated = await translateInput(title, note, currentLang);
+                            title = translated.title;
+                            note = translated.note;
+                        }
+
+                        // Analiz (Gerçek veya Simülasyon)
+                        let analysis;
+                        let usedRealAi = false;
+
+                        if (geminiApiKey) {
+                            const realAnalysis = await generateRealGeminiAnalysis(title, note, purpose);
+                            if (realAnalysis) {
+                                analysis = {
+                                    text: `<div><p><strong>Özet:</strong> ${realAnalysis.summary}</p><p><strong>Beklenen Etki:</strong> ${realAnalysis.estimatedImpact}</p><p><strong>Öneri:</strong> ${realAnalysis.recommendation}</p></div>`,
+                                    pros: realAnalysis.pros,
+                                    cons: realAnalysis.cons,
+                                    recommendation: realAnalysis.recommendation,
+                                    estimatedImpact: realAnalysis.estimatedImpact,
+                                    aiScore: realAnalysis.aiScore
+                                };
+                                // Düzeltmeleri uygula
+                                if (realAnalysis.correctedTitle) title = realAnalysis.correctedTitle;
+                                if (realAnalysis.correctedNote) note = realAnalysis.correctedNote;
+                                usedRealAi = true;
+                            }
+                        }
+
+                        if (!usedRealAi) {
+                            // Fallback to simulation
+                            const sim = generateSimulatedAnalysis(title, note, purpose);
+                            analysis = sim;
+                        }
+
+                        // Inputları güncelle (API düzeltmiş olabilir)
+                        el.querySelector('.idea-input').value = title;
+                        el.querySelector('.note-input').value = note;
+
+                        // Her analizde sıfırdan değerlendirme istendiği için ID'yi korusak bile analizi yeniden yapıyoruz
+                        // Ancak kullanıcı oyları (manualVotes) eğer başlık değişmediyse korunabilir, 
+                        // fakat "her şeyi en baştan" dendiği için oyları da sıfırlamak daha mantıklı olabilir.
+                        // İsteğe sadık kalarak tam yeniden analiz yapıyoruz.
+
+
+                        // Mevcut ID'yi korumaya çalışalım ki DOM'da gereksiz titreme olmasın, yoksa yeni ID
+                        const existingId = el.dataset.id;
+                        const newId = existingId && existingId.startsWith('id-') ? existingId : 'id-' + Math.random().toString(36).substr(2, 9);
+
+                        const ideaObj = {
+                            id: newId,
+                            title: title,
+                            note: note,
+                            aiAnalysis: analysis.text,
+                            pros: analysis.pros,
+                            cons: analysis.cons,
+                            recommendation: analysis.recommendation,
+                            estimatedImpact: analysis.estimatedImpact,
+                            aiScore: analysis.aiScore,
+                            manualVotes: 0 // Her şeyi en baştan dediği için oyları sıfırlıyoruz
+                        };
+                        newIdeasData.push(ideaObj);
+                    }
+
+                    // Boş başlıkları filtrele
+                    const validIdeas = newIdeasData.filter(i => i.title !== '');
+
+                    // Eski verileri temizle ve yenileri ata
+                    currentIdeas = [...validIdeas];
+                    previousIdeas = [...validIdeas];
+
+                    // Inputlara ID'leri geri yaz (eşleşme için)
+                    inputs.forEach((el, idx) => {
+                        if (currentIdeas[idx]) {
+                            el.dataset.id = currentIdeas[idx].id;
+                        }
+                    });
+
+                    // UI Güncelleme
+                    const resultsContainer = document.getElementById('resultsContainer');
+                    document.getElementById('placeholder').style.display = 'none';
+                    document.getElementById('purposeDisplay').innerText = `${translations[currentLang].objective} ${purpose}`;
+
+                    // Analizi Başlat butonu gizlenmiyor, her zaman çalışır durumda kalıyor.
+                    // Yeni fikir ekleme butonu gizleniyor (istek üzerine)
+                    const addBtn = document.getElementById('addIdeaBtn');
+                    if (addBtn) addBtn.style.display = 'none';
+
+                    // Sonuç kartlarını oluştur
+                    resultsContainer.innerHTML = '';
+                    // Varsayılan sıralama: AI Puanı
+                    currentIdeas.sort((a, b) => b.aiScore - a.aiScore);
+
+                    currentIdeas.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = `idea-card animate-pop w-full mx-auto ${item.aiScore === 0 ? 'misaligned-card' : ''}`;
+                        card.id = item.id;
+                        card.innerHTML = renderCardHtml(item);
+                        resultsContainer.appendChild(card);
+                    });
+
+                    renderRankingTable();
+                    updateChart();
+                    document.getElementById('rankingSection').classList.remove('hidden');
+                    document.getElementById('chartContainer').style.display = 'block';
+                    showAddAfterButton();
+                } catch (e) {
+                    console.error(e);
+                    alert("Bir hata oluştu: " + e.message);
+                } finally {
+                    // Butonu eski haline getir (Hata olsa bile)
+                    startBtn.innerText = translations[currentLang].startAnalysis;
+                    startBtn.disabled = false;
+                }
+                saveUserData();
+
+            }, 2000);
+        }
+
+        function renderRankingTable() {
+            const tableBody = document.getElementById('rankingTableBody');
+            tableBody.innerHTML = '';
+            const rankedIdeas = currentIdeas.filter(idea => idea.aiScore > 0);
+            rankedIdeas.forEach((idea, index) => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-slate-50 hover:bg-slate-50 transition-colors';
+                row.innerHTML = `
+                                                      <td class="p-4 text-xs font-black text-slate-300">#${index + 1}</td>
+                                                      <td class="p-4">
+                                                          <div class="font-bold text-sm text-slate-800 mb-1">${escapeHtml(idea.title)}</div>
+                                                          <div class="text-[10px] text-slate-400 italic leading-tight line-clamp-2">${idea.aiAnalysis}</div>
+                                                      </td>
+                                                      <td class="p-4 text-center">
+                                                          <span class="inline-block px-3 py-1 bg-slate-100 text-slate-600 text-xs font-black rounded-lg">${idea.aiScore}</span>
+                                                      </td>
+                                                      <td class="p-4 text-center no-print">
+                                                          <div class="flex items-center justify-center gap-1">
+                                                              <button onclick="updateManualVote('${idea.id}', -1)" class="w-8 h-8 flex items-center justify-center bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 font-extrabold">-</button>
+                                                              <button onclick="updateManualVote('${idea.id}', 1)" class="w-8 h-8 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 font-extrabold">+</button>
+                                                          </div>
+                                                      </td>
+                                                      <td class="p-4 text-right">
+                                                          <span class="inline-block px-4 py-2 bg-blue-600 text-white text-sm font-black rounded-xl shadow-sm min-w-[50px] text-center">${idea.manualVotes}</span>
+                                                      </td>
+                                                      `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function updateManualVote(id, delta) {
+            const idea = currentIdeas.find(i => i.id === id);
+            if (idea) {
+                if (idea.manualVotes + delta >= 0) {
+                    idea.manualVotes += delta;
+                    renderRankingTable();
+                    updateChart();
+                    saveUserData();
+                }
+            }
+        }
+
+        function resortTable(type) {
+            currentSortType = type;
+            if (type === 'ai') {
+                currentIdeas.sort((a, b) => b.aiScore - a.aiScore);
+            } else {
+                currentIdeas.sort((a, b) => b.manualVotes - a.manualVotes);
+            }
+            renderRankingTable();
+            updateChart();
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            const chartIdeas = currentIdeas.filter(idea => idea.aiScore > 0);
+            const labels = chartIdeas.map(i => i.title);
+            const aiScores = chartIdeas.map(i => i.aiScore);
+            const manualVotes = chartIdeas.map(i => i.manualVotes);
+
+            if (scoreChart) {
+                scoreChart.destroy();
+            }
+
+            // Datasetleri hazırla
+            const aiDataset = {
+                label: 'AI Skoru',
+                data: aiScores,
+                backgroundColor: '#3b82f6',
+                borderRadius: 8
+            };
+
+            const manualDataset = {
+                label: 'Kullanıcı Puanı',
+                data: manualVotes,
+                backgroundColor: '#1e293b', // Siyah/Koyu renk korundu
+                borderRadius: 8
+            };
+
+            // Sıralama tipine göre dataset sırasını değiştir (Sütun yer değişimi)
+            // Eğer manuel sıralama ise Kullanıcı Puanı başa gelir
+            const datasets = currentSortType === 'manual' ? [manualDataset, aiDataset] : [aiDataset, manualDataset];
+
+            scoreChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function confirmAndPrint() {
+            if (currentIdeas.length === 0) {
+                alert("Önce fikirleri analiz etmelisiniz.");
+                return;
+            }
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+
+        function executePrint() {
+            closeModal();
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        }
+
+        async function askAI(cardId) {
+            const input = document.getElementById(`ai-ask-${cardId}`);
+            if (!input.value.trim()) return;
+            const question = input.value.trim();
+            const idea = currentIdeas.find(i => i.id === cardId);
+            const extrasContainer = document.getElementById(`extras-${cardId}`);
+            const purpose = document.getElementById('groupPurpose').value.trim() || translations[currentLang].defaultPurpose;
+
+            // Input'u hemen temizle
+            input.value = '';
+
+            // Düşünüyor animasyonu ekle
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'box-section box-extra bg-slate-100 text-slate-500 flex items-center gap-2';
+            thinkingDiv.id = `thinking-${cardId}`;
+            thinkingDiv.innerHTML = `
+                <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                <span class="text-[10px] font-bold animate-pulse" data-translate-key="aiThinking">${translations[currentLang].aiThinking}</span>
+            `;
+            extrasContainer.prepend(thinkingDiv);
+
+            // Gecikmeli cevap simülasyonu
+            setTimeout(async () => {
+                // Düşünüyor yazısını kaldır
+                const currentThinking = document.getElementById(`thinking-${cardId}`);
+                if (currentThinking) currentThinking.remove();
+
+                let answer = '';
+                if (!idea) {
+                    answer = translations[currentLang].errorIdeaNotFound;
+                } else if (geminiApiKey) {
+                    // Gerçek API Çağrısı
+                    const prompt = translations[currentLang].geminiQuestionPrompt
+                        .replace('{purpose}', purpose)
+                        .replace('{title}', escapeHtml(idea.title))
+                        .replace('{note}', escapeHtml(idea.note))
+                        .replace('{analysis}', idea.aiAnalysis.replace(/<[^>]*>?/gm, ' '))
+                        .replace('{question}', escapeHtml(question));
+                    try {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                        });
+                        const data = await response.json();
+                        if (data.error) {
+                            throw new Error(data.error.message);
+                        }
+                        answer = data.candidates[0].content.parts[0].text;
+                    } catch (e) {
+                        // Hata durumunda kullanıcıyı rahatsız etmeden simülasyona geç
+                        answer = generateSimulatedAnswer(idea, question);
+                    }
+                } else {
+                    answer = generateSimulatedAnswer(idea, question);
+                }
+
+                const div = document.createElement('div');
+                div.className = 'box-section box-extra bg-slate-900 text-white';
+                div.innerHTML = `<div class="text-[9px] font-black text-blue-400 uppercase mb-1">${translations[currentLang].aiResponse}</div><p class="text-xs italic opacity-90">"${escapeHtml(question)}" ${translations[currentLang].inResponseTo} ${escapeHtml(answer)}</p>`;
+                extrasContainer.prepend(div);
+            }, 50);
+        }
+
+        function generateSimulatedAnswer(idea, question) {
+            const q = question.toLowerCase();
+            const topPros = idea.pros ? idea.pros.slice(0, 2).join(', ') : '';
+            const topCons = idea.cons ? idea.cons.slice(0, 2).join(', ') : '';
+            const rec = idea.recommendation || '';
+            const lang = currentLang;
+
+            // "Olur mu" / "Yapabilir miyiz" kontrolü
+            if (q.includes('olur mu') || q.includes('yapabilir miyiz') || q.includes('possible') || q.includes('can we')) {
+                if (idea.aiScore >= 75) {
+                    return lang === 'en' ? `Yes, it is feasible. With a high score of ${idea.aiScore}, the strategic alignment is strong and pros outweigh the cons.` : `Evet, olur. ${idea.aiScore} puanlık yüksek skor, fikrin stratejik uyumunun güçlü olduğunu ve avantajların risklere baskın geldiğini gösteriyor.`;
+                } else {
+                    return lang === 'en' ? `It might not be the best move. The score (${idea.aiScore}) suggests significant risks, particularly regarding ${idea.cons[0] || 'implementation'}.` : `Pek önerilmez. Düşük skor (${idea.aiScore}), özellikle ${idea.cons[0] || 'uygulama'} konusunda ciddi riskler olduğunu işaret ediyor.`;
+                }
+            }
+
+            if (q.includes('maliyet') || q.includes('fiyat') || q.includes('kaynak') || q.includes('bütçe')) {
+                return lang === 'en' ? `From a financial and resource perspective; ${idea.pros[0] || 'a cost advantage is foreseen'}. However, ${idea.cons[0] || 'some risks are present'}. You should consider these factors in budget planning.` : `Finansal ve kaynak perspektifinden bakıldığında; ${idea.pros[0] || 'maliyet avantajı öngörülüyor'}. Ancak ${idea.cons[0] || 'bazı riskler mevcut'}. Bütçe planlamasında bu unsurları dikkate almalısınız.`;
+            } else if (q.includes('zaman') || q.includes('süre') || q.includes('ne kadar') || q.includes('takvim')) {
+                return lang === 'en' ? `In terms of timeline; the pilot phase of the ${idea.title} project could take 4-6 weeks. Full integration will vary between 3-9 months depending on operational intensity.` : `Zaman çizelgesi açısından; ${idea.title} projesinin pilot aşaması 4-6 hafta sürebilir. Tam entegrasyon ise operasyonel yoğunluğa bağlı olarak 3-9 ay arasında değişecektir.`;
+            } else if (q.includes('risk') || q.includes('sakın') || q.includes('olumsuz') || q.includes('tehlike')) {
+                return lang === 'en' ? `Risk analysis: The most critical risk factor is "${idea.cons[0] || 'undefined'}". To minimize this, ${rec.split(';')[0] || 'conducting a pilot study'} is recommended.` : `Risk analizi: En kritik risk faktörü "${idea.cons[0] || 'belirsiz'}". Bunu minimize etmek için ${rec.split(';')[0] || 'pilot çalışma yapılması'} önerilir.`;
+            } else if (q.includes('nasıl') || q.includes('ne yapmal') || q.includes('uygula') || q.includes('yöntem')) {
+                return lang === 'en' ? `Implementation strategy: ${rec} As a first step, holding an alignment meeting with stakeholders would be beneficial.` : `Uygulama stratejisi: ${rec} İlk adım olarak paydaşlarla bir hizalanma toplantısı yapılması faydalı olacaktır.`;
+            } else {
+                return lang === 'en' ? `When examining the ${idea.title} idea in the context of your question; ${idea.pros[0] ? 'especially ' + idea.pros[0] + ' stands out.' : ''} Strategically, ${rec}` : `Sorunuz bağlamında ${idea.title} fikri incelendiğinde; ${idea.pros[0] ? 'özellikle ' + idea.pros[0] + ' konusu öne çıkıyor.' : ''} Stratejik olarak ${rec}`;
+            }
+        }
+
+        function submitDynamicQuery(cardId) {
+            const titleField = document.getElementById(`queryTitle-${cardId}`);
+            const bodyField = document.getElementById(`query-${cardId}`);
+            const title = titleField ? titleField.value.trim() : '';
+            const body = bodyField ? bodyField.value.trim() : '';
+            if (!body) return; // boş not eklenmez
+            const extrasContainer = document.getElementById(`extras-${cardId}`);
+            const div = document.createElement('div');
+            div.className = 'box-section box-extra';
+            if (title) {
+                div.innerHTML = `<div class="text-[10px] font-bold text-slate-800">${escapeHtml(title)}</div><p class="text-xs font-medium text-slate-700">${escapeHtml(body)}</p>`;
+            } else {
+                div.innerHTML = `<p class="text-xs font-medium text-slate-700">${escapeHtml(body)}</p>`;
+            }
+            extrasContainer.appendChild(div);
+            if (titleField) titleField.value = '';
+            if (bodyField) bodyField.value = '';
+            saveUserData();
+        }
+
+        function showAddAfterButton() {
+            const btn = document.getElementById('addAfterBtn');
+            if (btn) btn.classList.remove('hidden');
+            // reset butonu zaten sürekli görünür
+        }
+
+
+        // HTML üretimini tek bir yerde toplayalım
+        function renderCardHtml(item) {
+            const lang = currentLang;
+            return `
+                                                      <div class="flex justify-between items-center mb-4">
+                                                          <div class="relevance-badge italic">${translations[lang].aiReportBadge}</div>
+                                                          <div class="flex gap-2 items-center">
+                                                              <div class="text-[10px] font-bold text-blue-600 px-3 py-1 bg-blue-50 rounded-lg">${translations[lang].aiScoreLabel} ${item.aiScore}</div>
+                                                              <button onclick="deleteIdea('${item.id}')" class="text-[10px] font-bold text-rose-600 px-2 py-1 bg-rose-50 hover:bg-rose-100 rounded-lg no-print transition-colors">${translations[lang].delete}</button>
+                                                          </div>
+                                                      </div>
+                                                      <h3 class="text-xl font-extrabold text-slate-800 mb-2">${escapeHtml(item.title)}</h3>
+                                                      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-4">
+                                                          <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">${translations[lang].analysisOutput}</p>
+                                                          <div class="text-sm text-slate-600 leading-relaxed mb-4">${item.aiAnalysis}</div>
+                                                          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                              <div class="space-y-1">
+                                                                  <span class="text-[9px] font-black text-emerald-600 uppercase">${translations[lang].pros}</span>
+                                                                  ${item.pros.map(p => `<div class="text-[11px] text-slate-600 flex items-start gap-1"><span>•</span> ${p}</div>`).join('')}
+                                                              </div>
+                                                              <div class="space-y-1">
+                                                                  <span class="text-[9px] font-black text-rose-600 uppercase">${translations[lang].cons}</span>
+                                                                  ${item.cons.map(c => `<div class="text-[11px] text-slate-600 flex items-start gap-1"><span>•</span> ${c}</div>`).join('')}
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                      <div class="mb-4 ai-ask-box no-print">
+                                                          <div class="flex gap-2 p-1 bg-slate-900 rounded-2xl">
+                                                              <input id="ai-ask-${item.id}" class="flex-grow p-3 bg-transparent text-white text-sm outline-none placeholder:text-slate-500" placeholder="${translations[lang].askAiPlaceholder}">
+                                                                  <button onclick="askAI('${item.id}')" class="px-5 py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-blue-500 transition-colors">${translations[lang].askAiButton}</button>
+                                                          </div>
+                                                      </div>
+                                                      <div id="extras-${item.id}" class="space-y-2"></div>
+                                                      <div class="mt-6 pt-4 border-t border-slate-100 no-print flex flex-col md:flex-row gap-2 action-area">
+                                                          <input id="queryTitle-${item.id}" class="flex-shrink p-3 text-sm border border-slate-200 rounded-xl outline-none" placeholder="${translations[lang].optionalTitle}">
+                                                          <input id="query-${item.id}" class="flex-grow p-3 text-sm border border-slate-200 rounded-xl outline-none" placeholder="${translations[lang].notePlaceholder}">
+                                                          <button onclick="submitDynamicQuery('${item.id}')" class="px-6 py-2 bg-slate-800 text-white text-[10px] font-black uppercase rounded-lg">${translations[lang].addNote}</button>
+                                                      </div>
+                                                      `;
+        }
+        function deleteIdea(id) {
+            pushHistory();
+            // listedeki fikri bul
+            const ideaIndex = currentIdeas.findIndex(i => i.id === id);
+            if (ideaIndex === -1) return;
+            const ideaToDelete = currentIdeas[ideaIndex];
+
+            // dizilerden çıkar
+            currentIdeas.splice(ideaIndex, 1);
+            previousIdeas = previousIdeas.filter(i => i.id !== id);
+
+            // sonuç kartını kaldır
+            const card = document.getElementById(id);
+            if (card) card.remove();
+
+            // input alanını kaldır
+            const inputs = document.querySelectorAll('#inputContainer > div');
+            inputs.forEach(inputDiv => {
+                const titleInput = inputDiv.querySelector('.idea-input');
+                const noteInput = inputDiv.querySelector('.note-input');
+                if (titleInput.value === ideaToDelete.title && noteInput.value === ideaToDelete.note) {
+                    inputDiv.remove();
+                }
+            });
+
+            // tablo ve grafik güncelle
+            renderRankingTable();
+            updateChart();
+
+            // eğer artık fikir kalmadıysa başa dön ve butonu göster
+            if (currentIdeas.length === 0) {
+                document.getElementById('resultsContainer').innerHTML =
+                    '<div id="placeholder" class="py-20 text-center opacity-30 italic font-bold text-slate-400">Fikirlerinizi girerek analizi başlatın...</div>';
+                document.getElementById('rankingSection').classList.add('hidden');
+                document.getElementById('chartContainer').style.display = 'none';
+                document.getElementById('placeholder').style.display = 'block';
+                const addBtn = document.getElementById('addIdeaBtn');
+                if (addBtn) addBtn.style.display = '';
+            }
+
+            saveUserData();
+            showAddAfterButton();
+        }
+        function resetAll(useHistory = true) {
+            if (useHistory) pushHistory();
+
+            currentIdeas = [];
+            previousIdeas = [];
+            document.getElementById('resultsContainer').innerHTML =
+                '<div id="placeholder" class="py-20 text-center opacity-30 italic font-bold text-slate-400">Fikirlerinizi girerek analizi başlatın...</div>';
+            document.getElementById('rankingSection').classList.add('hidden');
+            document.getElementById('chartContainer').style.display = 'none';
+
+            // Grup amacını temizle
+            document.getElementById('groupPurpose').value = '';
+
+            // inputları sıfırla
+            const inputContainer = document.getElementById('inputContainer');
+            inputContainer.innerHTML = '';
+            addInput();
+            // butonları geri getir
+            const addBtn = document.getElementById('addIdeaBtn');
+            if (addBtn) addBtn.style.display = '';
+            // analiz sonrası düğmesi de mutlaka görülsün
+            const afterBtn = document.getElementById('addAfterBtn');
+            if (afterBtn) afterBtn.classList.remove('hidden');
+
+            saveUserData();
+        }
+
+        function addIdeaAfterAnalysis() {
+            pushHistory();
+            const title = prompt(translations[currentLang].promptNewIdea);
+            if (!title || !title.trim()) return;
+            const note = prompt(translations[currentLang].promptNewNote) || '';
+            const purpose = document.getElementById('groupPurpose').value.trim() || translations[currentLang].defaultPurpose;
+            const analysis = generateSimulatedAnalysis(title.trim(), note.trim(), purpose);
+
+            const newIdea = {
+                id: 'id-' + Math.random().toString(36).substr(2, 9),
+                title: title.trim(),
+                note: note.trim(),
+                aiAnalysis: analysis.text,
+                pros: analysis.pros,
+                cons: analysis.cons,
+                recommendation: analysis.recommendation,
+                estimatedImpact: analysis.estimatedImpact,
+                aiScore: analysis.aiScore,
+                manualVotes: 0
+            };
+
+            currentIdeas.push(newIdea);
+
+            // Listeyi puana göre (veya seçili tipe göre) yeniden sırala
+            if (currentSortType === 'ai') {
+                currentIdeas.sort((a, b) => b.aiScore - a.aiScore);
+            } else {
+                currentIdeas.sort((a, b) => b.manualVotes - a.manualVotes);
+            }
+
+            // inputContainer'a da ekle (Analizi Başlat her çalıştırıldığında yeni fikirler de alınsın)
+            const inputContainer = document.getElementById('inputContainer');
+            const inputDiv = document.createElement('div');
+            inputDiv.className = 'flex flex-col md:flex-row gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 relative';
+            inputDiv.dataset.id = newIdea.id;
+            inputDiv.innerHTML = `
+                                                      <div class="flex-grow space-y-2">
+                                                          <input type="text" class="idea-input w-full p-3 border border-slate-200 rounded-xl outline-none text-sm font-bold focus:border-blue-500" placeholder="${translations[currentLang].ideaTitlePlaceholder}" value="${escapeHtml(newIdea.title)}">
+                                                              <textarea class="note-input w-full p-3 border border-slate-200 rounded-xl outline-none text-xs font-medium h-16 resize-none focus:border-blue-500" placeholder="${translations[currentLang].ideaNotePlaceholder}">${escapeHtml(newIdea.note)}</textarea>
+                                                      </div>
+                                                      <button onclick="removeInputDiv(this)" class="p-2 text-slate-300 hover:text-rose-500 no-print self-center">
+                                                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                      </button>
+                                                      `;
+            inputContainer.appendChild(inputDiv);
+
+            // Yeniden render
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = ''; // Önce temizle
+            currentIdeas.forEach(item => {
+                const card = document.createElement('div');
+                card.className = `idea-card animate-pop w-full mx-auto ${item.aiScore === 0 ? 'misaligned-card' : ''}`;
+                card.id = item.id;
+                card.innerHTML = renderCardHtml(item);
+                resultsContainer.appendChild(card);
+            });
+
+            renderRankingTable();
+            updateChart();
+            document.getElementById('rankingSection').classList.remove('hidden');
+            document.getElementById('chartContainer').style.display = 'block';
+            saveUserData();
+            showAddAfterButton();
+        }
+
+    </script>
+</body>
+
+</html>
