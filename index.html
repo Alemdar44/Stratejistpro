@@ -37,10 +37,12 @@
         }
 
         .misaligned-card {
-            background-color: #f5f3ff;
-            /* light purple */
-            border-color: #8b5cf6;
-            /* purple */
+            background-color: #e9d5ff;
+            /* Light purple - more visible */
+            border-color: #9333ea;
+            /* Strong purple border */
+            box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+            /* Purple glow effect */
         }
 
         .box-section {
@@ -310,13 +312,16 @@
                                 <th data-translate-key="ideaAndOutput"
                                     class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-48">
                                     Fikir & Analiz Çıktısı</th>
+                                <th data-translate-key="shortDesc"
+                                    class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-48">
+                                    Kısa Açıklama</th>
                                 <th data-translate-key="aiScore"
                                     class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
                                     Yapay Zeka Puanı</th>
                                 <th data-translate-key="userAction"
                                     class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center no-print">
                                     Kullanıcı İşlemi</th>
-                                <th data-translate-key="userScore"
+                                <th data-translate-key="userScore" 
                                     class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
                                     Kullanıcı Puanı</th>
                             </tr>
@@ -325,6 +330,11 @@
                             <!-- JS ile doldurulacak -->
                         </tbody>
                     </table>
+                </div>
+                <div class="p-4 flex justify-end no-print border-t border-slate-100">
+                    <button id="toggleMisalignedBtn" onclick="toggleMisaligned()" data-translate-key="showMisaligned"
+                        class="hidden text-[10px] font-black text-purple-600 uppercase hover:underline">Uyumsuz Fikirleri
+                        Göster</button>
                 </div>
                 <div class="bg-slate-50 p-4 text-center no-print border-t border-slate-100 flex justify-center gap-4">
                     <button onclick="resortTable('ai')" data-translate-key="sortByAi"
@@ -581,6 +591,7 @@
         let previousIdeas = [];
         // geçmiş durum saklamak için yığın
         let historyStack = [];
+        let showMisaligned = false;
         let currentSortType = 'ai'; // 'ai' veya 'manual'
         let currentLang = 'tr';
         let currentUser = null;
@@ -609,6 +620,8 @@
                 userScore: "User Score",
                 sortByAi: "Sort by AI Score",
                 sortByUser: "Sort by User Score",
+                showMisaligned: "Show Misaligned Ideas",
+                hideMisaligned: "Hide Misaligned Ideas",
                 chartTitle: "Score Comparison Chart",
                 confirmPdfTitle: "Create PDF?",
                 confirmPdfBody: "Your analysis report, score table, and comparison chart will be prepared as a PDF.",
@@ -717,20 +730,19 @@
                 simEstimatedImpact: `{percent}% (estimated impact for the first 6-12 months)`,
                 simAutoNote: `A strategic initiative focusing on {title} to support the {purpose} objective.`,
                 simSummary: `In light of strategic evaluations; the <strong>{title}</strong> idea has the potential to play a critical role in achieving the organization's <em>{purpose}</em> goals. {randomTheme} It can particularly {randomVerb} the current structure in resource management and process improvement areas. Long-term projections indicate that this initiative could provide a sustainable competitive advantage.`,
-                geminiAnalysisPrompt: `
-            You are a strict and critical strategic business analyst. Your task is to evaluate the following idea against the specific Group Objective.
+                geminiAnalysisPrompt: `You are a strict and critical strategic business analyst. Your task is to evaluate the following idea against the specific Group Objective. Read the idea's note ({note}) carefully, it is a critical part of the main idea.
+
             Idea: {title}
             Note: {note}
             Group Objective: {purpose}
 
             CRITICAL INSTRUCTIONS:
-            1. **CONTEXTUAL ALIGNMENT (CRUCIAL):** Strictly compare the nature of the Idea with the Group Objective.
-               - If the objective is DIGITAL (e.g., "Software", "App", "Online Platform") and the idea is PHYSICAL (e.g., "Opening a Cafe", "Manufacturing"), score it exactly 0.
-               - If the objective is PHYSICAL and the idea is purely DIGITAL, score it exactly 0.
-            2. **LOGICAL FEASIBILITY:** If the idea is logically impossible or completely unrealistic within the context, score it exactly 0.
-            3. If the "aiScore" is 0, the "summary" must clearly explain the misalignment (e.g., "Context mismatch: Digital vs Physical").
-            4. If aligned and logical, score between 60 and 100 based on feasibility and impact.
-            5. Be direct and concise. Avoid fluff.
+            1. **CONTEXTUAL ALIGNMENT (CRUCIAL):** Strictly compare the nature of the Idea ({title} and {note}) with the Group Objective ({purpose}).
+               - If the idea is completely irrelevant to the objective (e.g., objective is "Software" while idea is "Open a Cafe"), score it between 1-49.
+               - If the idea is aligned and logical, score it between 50 and 100 based on feasibility and impact.
+            2. **LOGICAL FEASIBILITY:** If the idea is logically impossible or completely unrealistic, score it between 1-49.
+            3. If the "aiScore" is below 50, the "summary" must clearly explain the misalignment (e.g., "Context mismatch: Digital objective vs. Physical idea").
+            4. Be direct and concise. Avoid fluff.
 
             Please provide the output ONLY in the following JSON format (no Markdown):
             {
@@ -741,7 +753,7 @@
                 "cons": ["Con 1", "Con 2"],
                 "recommendation": "A short strategic recommendation",
                 "estimatedImpact": "Estimated impact percentage (e.g., %85)",
-                "aiScore": 75 (an integer between 60 and 100)
+                "aiScore": 75 (an integer, 50-100 if aligned, 1-49 if misaligned)
             }
             `,
                 geminiQuestionPrompt: `
@@ -777,6 +789,8 @@
                 userScore: "Kullanıcı Puanı",
                 sortByAi: "Yapay Zeka Puanına Göre Sırala",
                 sortByUser: "Kullanıcı Puanına Göre Sırala",
+                showMisaligned: "Uyumsuz Fikirleri Göster",
+                hideMisaligned: "Uyumsuz Fikirleri Gizle",
                 chartTitle: "Puan Karşılaştırma Grafiği",
                 confirmPdfTitle: "PDF Oluşturulsun mu?",
                 confirmPdfBody: "Analiz raporunuz, puan tablonuz ve karşılaştırma grafiğiniz PDF olarak hazırlanacaktır.",
@@ -866,20 +880,19 @@
                 simEstimatedImpact: `% {percent} (ilk 6-12 ay için tahmini etkisi)`,
                 simAutoNote: `{title} üzerine odaklanan, {purpose} hedefini destekleyici stratejik inisiyatif.`,
                 simSummary: `Yapılan stratejik değerlendirmeler ışığında; <strong>{title}</strong> fikri, organizasyonun <em>{purpose}</em> hedeflerine ulaşmasında kritik bir rol oynama potansiyeline sahiptir. {randomTheme} Özellikle kaynak yönetimi ve süreç iyileştirme alanlarında mevcut yapıyı {randomVerb}. Uzun vadeli projeksiyonlar, bu girişimin sürdürülebilir rekabet avantajı sağlayabileceğini işaret etmektedir.`,
-                geminiAnalysisPrompt: `
-            Sen, katı ve eleştirel bir stratejik iş analistisin. Görevin aşağıdaki fikri, belirtilen Grup Amacı ile uyumluluğu açısından değerlendirmektir.
+                geminiAnalysisPrompt: `Sen, katı ve eleştirel bir stratejik iş analistisin. Görevin aşağıdaki fikri, belirtilen Grup Amacı ile uyumluluğu açısından değerlendirmektir. Fikrin notunu ({note}) dikkatle oku, bu ana fikrin önemli bir parçasıdır.
+
             Fikir: {title}
             Not: {note}
             Grup Amacı: {purpose}
 
             KRİTİK TALİMATLAR:
-            1. **BAĞLAMSAL UYUM (ÇOK ÖNEMLİ):** Fikrin doğası ile Grup Amacını sıkı bir şekilde karşılaştır.
-               - Eğer amaç DİJİTAL ise (örn: "Yazılım", "Uygulama", "Online") ve fikir FİZİKSEL ise (örn: "Kafe Açmak", "Üretim"), puanı (aiScore) kesinlikle 0 ver.
-               - Eğer amaç FİZİKSEL/GERÇEK DÜNYA ise ve fikir tamamen DİJİTAL ise, puanı kesinlikle 0 ver.
-            2. **MANTIKSAL OLASILIK:** Fikir mantıken imkansızsa veya bağlam içinde tamamen gerçek dışıysa puanı 0 ver.
-            3. Eğer puan 0 ise, "summary" kısmında bu uyumsuzluğu net bir şekilde açıkla (Örn: "Bağlam uyuşmazlığı: Dijital hedefe Fiziksel fikir").
-            4. Eğer uyumlu ve mantıklıysa, uygulanabilirlik ve etkiye göre 60 ile 100 arasında puanla.
-            5. Direkt ve net ol. Gereksiz süslemelerden kaçın.
+            1. **BAĞLAMSAL UYUM (ÇOK ÖNEMLİ):** Fikrin ({title} ve {note}) doğasını Grup Amacı ({purpose}) ile sıkı bir şekilde karşılaştır.
+               - Eğer fikir amaçla tamamen alakasızsa (örn: amaç "Yazılım" iken fikir "Kafe Açmak"), puanı 1-49 arasında ver.
+               - Eğer fikir amaçla uyumlu ve mantıklıysa, uygulanabilirlik ve etkiye göre 50 ile 100 arasında puanla.
+            2. **MANTIKSAL OLASILIK:** Fikir mantıken imkansızsa veya bağlam içinde tamamen gerçek dışıysa puanı 1-49 arasında ver.
+            3. Eğer puan 49'dan düşükse, "summary" kısmında bu uyumsuzluğu net bir şekilde açıkla (Örn: "Bağlam uyuşmazlığı: Dijital hedefe Fiziksel fikir").
+            4. Direkt ve net ol. Gereksiz süslemelerden kaçın.
 
             Lütfen çıktıyı SADECE aşağıdaki JSON formatında ver (Markdown yok):
             {
@@ -890,7 +903,7 @@
                 "cons": ["Eksi 1", "Eksi 2"],
                 "recommendation": "Kısa stratejik öneri",
                 "estimatedImpact": "Tahmini etki yüzdesi (örn: %85)",
-                "aiScore": 75 (60 ile 100 arasında bir tam sayı puan)
+                "aiScore": 75 (uyumluysa 50-100, uyumsuzsa 1-49 arası bir tam sayı)
             }
             `,
                 geminiQuestionPrompt: `
@@ -927,6 +940,8 @@
                 userScore: "Benutzerpunktzahl",
                 sortByAi: "Nach KI-Punktzahl sortieren",
                 sortByUser: "Nach Benutzerpunktzahl sortieren",
+                showMisaligned: "Nicht ausgerichtete Ideen anzeigen",
+                hideMisaligned: "Nicht ausgerichtete Ideen ausblenden",
                 chartTitle: "Punktzahl-Vergleichsdiagramm",
                 confirmPdfTitle: "PDF erstellen?",
                 confirmPdfBody: "Ihr Analysebericht, die Punktetabelle und das Vergleichsdiagramm werden als PDF erstellt.",
@@ -1035,20 +1050,19 @@
                 simEstimatedImpact: "{percent}% (geschätzte Auswirkung für die ersten 6-12 Monate)",
                 simAutoNote: "Eine strategische Initiative mit Fokus auf {title} zur Unterstützung des Ziels {purpose}.",
                 simSummary: "Im Lichte strategischer Bewertungen hat die Idee <strong>{title}</strong> das Potenzial, eine entscheidende Rolle bei der Erreichung der Ziele von <em>{purpose}</em> zu spielen. {randomTheme} Sie kann insbesondere die aktuelle Struktur in den Bereichen Ressourcenmanagement und Prozessverbesserung {randomVerb}. Langfristige Prognosen deuten darauf hin, dass diese Initiative einen nachhaltigen Wettbewerbsvorteil bieten könnte.",
-                geminiAnalysisPrompt: `
-            Sie sind ein strenger und kritischer strategischer Geschäftsanalyst. Ihre Aufgabe ist es, die folgende Idee anhand des spezifischen Gruppenziels zu bewerten.
+                geminiAnalysisPrompt: `Sie sind ein strenger und kritischer strategischer Geschäftsanalyst. Ihre Aufgabe ist es, die folgende Idee anhand des spezifischen Gruppenziels zu bewerten. Lesen Sie die Notiz der Idee ({note}) sorgfältig durch, sie ist ein wichtiger Teil der Hauptidee.
+
             Idee: {title}
             Notiz: {note}
             Gruppenziel: {purpose}
 
             KRITISCHE ANWEISUNGEN:
-            1. **KONTEXTUELLE AUSRICHTUNG (WICHTIG):** Vergleichen Sie die Art der Idee streng mit dem Gruppenziel.
-               - Wenn das Ziel DIGITAL ist (z.B. "Software", "App", "Online-Plattform") und die Idee PHYSISCH ist (z.B. "Café eröffnen", "Herstellung"), geben Sie genau 0 Punkte.
-               - Wenn das Ziel PHYSISCH ist und die Idee rein DIGITAL ist, geben Sie genau 0 Punkte.
-            2. **LOGISCHE MACHBARKEIT:** Wenn die Idee logisch unmöglich oder im Kontext völlig unrealistisch ist, geben Sie genau 0 Punkte.
-            3. Wenn der "aiScore" 0 ist, muss die "summary" die Fehlausrichtung klar erklären (z.B. "Kontext-Fehlanpassung: Digital vs. Physisch").
-            4. Wenn ausgerichtet und logisch, bewerten Sie zwischen 60 und 100 basierend auf Machbarkeit und Auswirkung.
-            5. Seien Sie direkt und prägnant. Vermeiden Sie Füllwörter.
+            1. **KONTEXTUELLE AUSRICHTUNG (WICHTIG):** Vergleichen Sie die Art der Idee ({title} und {note}) streng mit dem Gruppenziel ({purpose}).
+               - Wenn die Idee für das Ziel völlig irrelevant ist (z.B. Ziel ist "Software", Idee ist "Café eröffnen"), bewerten Sie sie zwischen 1-49.
+               - Wenn die Idee ausgerichtet und logisch ist, bewerten Sie sie zwischen 50 und 100 basierend auf Machbarkeit und Auswirkung.
+            2. **LOGISCHE MACHBARKEIT:** Wenn die Idee logisch unmöglich oder völlig unrealistisch ist, bewerten Sie sie zwischen 1-49.
+            3. Wenn der "aiScore" unter 50 liegt, muss die "summary" die Fehlausrichtung klar erklären (z.B. "Kontext-Fehlanpassung: Digitales Ziel vs. physische Idee").
+            4. Seien Sie direkt und prägnant. Vermeiden Sie Füllwörter.
 
             Bitte geben Sie die Ausgabe NUR im folgenden JSON-Format an (kein Markdown):
             {
@@ -1059,7 +1073,7 @@
                 "cons": ["Nachteil 1", "Nachteil 2"],
                 "recommendation": "Eine kurze strategische Empfehlung",
                 "estimatedImpact": "Geschätzter Auswirkungsprozentsatz (z.B. %85)",
-                "aiScore": 75 (eine ganze Zahl zwischen 60 und 100)
+                "aiScore": 75 (eine ganze Zahl, 50-100 bei Ausrichtung, 1-49 bei Nicht-Ausrichtung)
             }
             `,
                 geminiQuestionPrompt: `
@@ -1095,6 +1109,8 @@
                 userScore: "Puntuación de Usuario",
                 sortByAi: "Ordenar por Puntuación IA",
                 sortByUser: "Ordenar por Puntuación de Usuario",
+                showMisaligned: "Mostrar Ideas Desalineadas",
+                hideMisaligned: "Ocultar Ideas Desalineadas",
                 chartTitle: "Gráfico de Comparación de Puntuación",
                 confirmPdfTitle: "¿Crear PDF?",
                 confirmPdfBody: "Su informe de análisis, tabla de puntuación y gráfico de comparación se prepararán como PDF.",
@@ -1203,20 +1219,19 @@
                 simEstimatedImpact: "{percent}% (impacto estimado para los primeros 6-12 meses)",
                 simAutoNote: "Una iniciativa estratégica centrada en {title} para apoyar el objetivo {purpose}.",
                 simSummary: "A la luz de las evaluaciones estratégicas; la idea <strong>{title}</strong> tiene el potencial de jugar un papel crítico en el logro de los objetivos de <em>{purpose}</em> de la organización. {randomTheme} Puede particularmente {randomVerb} la estructura actual en áreas de gestión de recursos y mejora de procesos. Las proyecciones a largo plazo indican que esta iniciativa podría proporcionar una ventaja competitiva sostenible.",
-                geminiAnalysisPrompt: `
-            Eres un analista de negocios estratégico estricto y crítico. Tu tarea es evaluar la siguiente idea contra el Objetivo del Grupo específico.
+                geminiAnalysisPrompt: `Eres un analista de negocios estratégico estricto y crítico. Tu tarea es evaluar la siguiente idea contra el Objetivo del Grupo específico. Lee la nota de la idea ({note}) con atención, es una parte fundamental de la idea principal.
+
             Idea: {title}
             Nota: {note}
             Objetivo del Grupo: {purpose}
 
             INSTRUCCIONES CRÍTICAS:
-            1. **ALINEACIÓN CONTEXTUAL (CRUCIAL):** Compara estrictamente la naturaleza de la Idea con el Objetivo del Grupo.
-               - Si el objetivo es DIGITAL (ej. "Software", "App", "Plataforma Online") y la idea es FÍSICA (ej. "Abrir un Café", "Fabricación"), puntúa exactamente 0.
-               - Si el objetivo es FÍSICO y la idea es puramente DIGITAL, puntúa exactamente 0.
-            2. **VIABILIDAD LÓGICA:** Si la idea es lógicamente imposible o completamente irrealista dentro del contexto, puntúa exactamente 0.
-            3. Si el "aiScore" es 0, el "summary" debe explicar claramente la desalineación (ej. "Desajuste de contexto: Digital vs Físico").
-            4. Si está alineado y es lógico, puntúa entre 60 y 100 basado en viabilidad e impacto.
-            5. Sé directo y conciso. Evita el relleno.
+            1. **ALINEACIÓN CONTEXTUAL (CRUCIAL):** Compara estrictamente la naturaleza de la Idea ({title} y {note}) con el Objetivo del Grupo ({purpose}).
+               - Si la idea es completamente irrelevante para el objetivo (ej. objetivo es "Software" mientras que la idea es "Abrir un Café"), puntúa entre 1-49.
+               - Si la idea está alineada y es lógica, puntúa entre 50 y 100 basado en viabilidad e impacto.
+            2. **VIABILIDAD LÓGICA:** Si la idea es lógicamente imposible o completamente irrealista, puntúa entre 1-49.
+            3. Si el "aiScore" es inferior a 50, el "summary" debe explicar claramente la desalineación (ej. "Desajuste de contexto: objetivo Digital vs. idea Física").
+            4. Sé directo y conciso. Evita el relleno.
 
             Por favor proporciona la salida SOLO en el siguiente formato JSON (sin Markdown):
             {
@@ -1227,7 +1242,7 @@
                 "cons": ["Contra 1", "Contra 2"],
                 "recommendation": "Una breve recomendación estratégica",
                 "estimatedImpact": "Porcentaje de impacto estimado (ej. %85)",
-                "aiScore": 75 (un número entero entre 60 y 100)
+                "aiScore": 75 (un entero, 50-100 si está alineado, 1-49 si está desalineado)
             }
             `,
                 geminiQuestionPrompt: `
@@ -1263,6 +1278,8 @@
                 userScore: "Score Utilisateur",
                 sortByAi: "Trier par Score IA",
                 sortByUser: "Trier par Score Utilisateur",
+                showMisaligned: "Afficher les Idées Non Alignées",
+                hideMisaligned: "Masquer les Idées Non Alignées",
                 chartTitle: "Graphique de Comparaison des Scores",
                 confirmPdfTitle: "Créer PDF ?",
                 confirmPdfBody: "Votre rapport d'analyse, tableau de scores et graphique de comparaison seront préparés en PDF.",
@@ -1371,20 +1388,19 @@
                 simEstimatedImpact: "{percent}% (impact estimé pour les 6-12 premiers mois)",
                 simAutoNote: "Une initiative stratégique axée sur {title} pour soutenir l'objectif {purpose}.",
                 simSummary: "À la lumière des évaluations stratégiques ; l'idée <strong>{title}</strong> a le potentiel de jouer un rôle critique dans la réalisation des objectifs de <em>{purpose}</em> de l'organisation. {randomTheme} Elle peut particulièrement {randomVerb} la structure actuelle dans les domaines de la gestion des ressources et de l'amélioration des processus. Les projections à long terme indiquent que cette initiative pourrait fournir un avantage concurrentiel durable.",
-                geminiAnalysisPrompt: `
-            Vous êtes un analyste commercial stratégique strict et critique. Votre tâche est d'évaluer l'idée suivante par rapport à l'Objectif du Groupe spécifique.
+                geminiAnalysisPrompt: `Vous êtes un analyste commercial stratégique strict et critique. Votre tâche est d'évaluer l'idée suivante par rapport à l'Objectif du Groupe spécifique. Lisez attentivement la note de l'idée ({note}), c'est une partie essentielle de l'idée principale.
+
             Idée : {title}
             Note : {note}
             Objectif du Groupe : {purpose}
 
             INSTRUCTIONS CRITIQUES :
-            1. **ALIGNEMENT CONTEXTUEL (CRUCIAL) :** Comparez strictement la nature de l'Idée avec l'Objectif du Groupe.
-               - Si l'objectif est NUMÉRIQUE (ex : "Logiciel", "App", "Plateforme en ligne") et l'idée est PHYSIQUE (ex : "Ouvrir un Café", "Fabrication"), donnez exactement 0 point.
-               - Si l'objectif est PHYSIQUE et l'idée est purement NUMÉRIQUE, donnez exactement 0 point.
-            2. **FAISABILITÉ LOGIQUE :** Si l'idée est logiquement impossible ou complètement irréaliste dans le contexte, donnez exactement 0 point.
-            3. Si le "aiScore" est 0, le "summary" doit expliquer clairement le désalignement (ex : "Désalignement contextuel : Numérique vs Physique").
-            4. Si aligné et logique, notez entre 60 et 100 en fonction de la faisabilité et de l'impact.
-            5. Soyez direct et concis. Évitez le remplissage.
+            1. **ALIGNEMENT CONTEXTUEL (CRUCIAL) :** Comparez strictement la nature de l'Idée ({title} et {note}) avec l'Objectif du Groupe ({purpose}).
+               - Si l'idée est totalement hors de propos par rapport à l'objectif (ex: objectif "Logiciel" et idée "Ouvrir un café"), notez-la entre 1 et 49.
+               - Si l'idée est alignée et logique, notez-la entre 50 et 100 en fonction de la faisabilité et de l'impact.
+            2. **FAISABILITÉ LOGIQUE :** Si l'idée est logiquement impossible ou complètement irréaliste, notez-la entre 1 et 49.
+            3. Si le "aiScore" est inférieur à 50, le "summary" doit expliquer clairement le désalignement (ex: "Désalignement contextuel : objectif numérique vs idée physique").
+            4. Soyez direct et concis. Évitez le remplissage.
 
             Veuillez fournir la sortie UNIQUEMENT au format JSON suivant (pas de Markdown) :
             {
@@ -1395,7 +1411,7 @@
                 "cons": ["Inconvénient 1", "Inconvénient 2"],
                 "recommendation": "Une brève recommandation stratégique",
                 "estimatedImpact": "Pourcentage d'impact estimé (ex : %85)",
-                "aiScore": 75 (un entier entre 60 et 100)
+                "aiScore": 75 (un entier, 50-100 si aligné, 1-49 si non aligné)
             }
             `,
                 geminiQuestionPrompt: `
@@ -1866,7 +1882,7 @@
                 resultsContainer.innerHTML = '';
                 currentIdeas.forEach(item => {
                     const card = document.createElement('div');
-                    card.className = `idea-card animate-pop w-full mx-auto ${item.aiScore === 0 ? 'misaligned-card' : ''}`;
+                    card.className = `idea-card animate-pop w-full mx-auto ${item.aiScore < 50 ? 'misaligned-card' : ''}`;
                     card.id = item.id;
                     card.innerHTML = renderCardHtml(item);
                     resultsContainer.appendChild(card);
@@ -1930,15 +1946,15 @@
             let recommendation;
             let pros, cons;
 
-            if (isMisaligned) {
-                aiScore = 0;
+            if (isMisaligned) { 
+                aiScore = 1 + (seed % 49); // 1-49 aralığında
                 summary = translations[lang].misalignedSummary.replace('{purpose}', purpose);
                 pros = [];
                 cons = [translations[lang].misalignedCons];
                 recommendation = translations[lang].misalignedRec;
             } else {
-                const base = seed % 41;
-                aiScore = 60 + base; // 60-100 aralığında
+                const base = seed % 51; // 0-50
+                aiScore = 50 + base; // 50-100 aralığında
                 const randomTheme = themes[seed % themes.length];
                 const impactVerbs = translations[lang].impactVerbs;
                 const randomVerb = impactVerbs[seed % impactVerbs.length];
@@ -1985,7 +2001,7 @@
         }
 
         async function generateRealGeminiAnalysis(title, note, purpose) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${geminiApiKey}`;
 
             const prompt = translations[currentLang].geminiAnalysisPrompt
                 .replace('{title}', escapeHtml(title))
@@ -2018,9 +2034,9 @@
         }
 
         async function translateInput(title, note, targetLang) {
-            if (!geminiApiKey) return { title, note };
+            if (!geminiApiKey) return { title, note }; // Çeviri için API anahtarı gerekli
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
             const prompt = `
             Translate the values in the following JSON object to ${targetLang}.
             Provide the output ONLY in the same JSON format (no Markdown).
@@ -2216,10 +2232,14 @@
                     const validIdeas = newIdeasData.filter(i => i.title !== '');
 
                     // Eski verileri temizle ve yenileri ata
-                    currentIdeas = [...validIdeas];
-                    previousIdeas = [...validIdeas];
+                    const aligned = validIdeas.filter(i => i.aiScore >= 50);
+                    const misaligned = validIdeas.filter(i => i.aiScore < 50);
+                    aligned.sort((a, b) => b.aiScore - a.aiScore);
+                    misaligned.sort((a, b) => b.aiScore - a.aiScore);
+                    currentIdeas = [...aligned, ...misaligned];
+                    previousIdeas = [...currentIdeas];
 
-                    // Inputlara ID'leri geri yaz (eşleşme için)
+                    // Inputlara ID'leri geri yaz
                     inputs.forEach((el, idx) => {
                         if (currentIdeas[idx]) {
                             el.dataset.id = currentIdeas[idx].id;
@@ -2230,20 +2250,22 @@
                     const resultsContainer = document.getElementById('resultsContainer');
                     document.getElementById('placeholder').style.display = 'none';
                     document.getElementById('purposeDisplay').innerText = `${translations[currentLang].objective} ${purpose}`;
-
-                    // Analizi Başlat butonu gizlenmiyor, her zaman çalışır durumda kalıyor.
-                    // Yeni fikir ekleme butonu gizleniyor (istek üzerine)
                     const addBtn = document.getElementById('addIdeaBtn');
                     if (addBtn) addBtn.style.display = 'none';
 
+                    // Uyumsuz fikirler butonu, eğer uyumsuz fikir varsa gösterilir
+                    const toggleBtn = document.getElementById('toggleMisalignedBtn');
+                    if (misaligned.length > 0) {
+                        toggleBtn.classList.remove('hidden');
+                    } else {
+                        toggleBtn.classList.add('hidden');
+                    }
+
                     // Sonuç kartlarını oluştur
                     resultsContainer.innerHTML = '';
-                    // Varsayılan sıralama: AI Puanı
-                    currentIdeas.sort((a, b) => b.aiScore - a.aiScore);
-
                     currentIdeas.forEach(item => {
                         const card = document.createElement('div');
-                        card.className = `idea-card animate-pop w-full mx-auto ${item.aiScore === 0 ? 'misaligned-card' : ''}`;
+                        card.className = `idea-card animate-pop w-full mx-auto ${item.aiScore < 50 ? 'misaligned-card' : ''}`;
                         card.id = item.id;
                         card.innerHTML = renderCardHtml(item);
                         resultsContainer.appendChild(card);
@@ -2270,18 +2292,29 @@
         function renderRankingTable() {
             const tableBody = document.getElementById('rankingTableBody');
             tableBody.innerHTML = '';
-            const rankedIdeas = currentIdeas.filter(idea => idea.aiScore > 0);
-            rankedIdeas.forEach((idea, index) => {
+            let rank = 1;
+            currentIdeas.forEach((idea) => {
+                const isMisaligned = idea.aiScore < 50;
+                if (isMisaligned && !showMisaligned) return;
+
                 const row = document.createElement('tr');
                 row.className = 'border-b border-slate-50 hover:bg-slate-50 transition-colors';
+                if (isMisaligned) {
+                    row.classList.add('bg-purple-50', 'opacity-80');
+                }
+
+                const rankDisplay = isMisaligned ? '-' : `#${rank}`;
+                if (!isMisaligned) rank++;
+
                 row.innerHTML = `
-                                                      <td class="p-4 text-xs font-black text-slate-300">#${index + 1}</td>
+                                                      <td class="p-4 text-xs font-black text-slate-300">${rankDisplay}</td>
                                                       <td class="p-4">
                                                           <div class="font-bold text-sm text-slate-800 mb-1">${escapeHtml(idea.title)}</div>
                                                           <div class="text-[10px] text-slate-400 italic leading-tight line-clamp-2">${idea.aiAnalysis}</div>
                                                       </td>
+                                                      <td class="p-4 text-xs text-slate-500">${escapeHtml(idea.note)}</td>
                                                       <td class="p-4 text-center">
-                                                          <span class="inline-block px-3 py-1 bg-slate-100 text-slate-600 text-xs font-black rounded-lg">${idea.aiScore}</span>
+                                                          <span class="inline-block px-3 py-1 ${isMisaligned ? 'bg-purple-200 text-purple-800' : 'bg-slate-100 text-slate-600'} text-xs font-black rounded-lg">${idea.aiScore}</span>
                                                       </td>
                                                       <td class="p-4 text-center no-print">
                                                           <div class="flex items-center justify-center gap-1">
@@ -2309,29 +2342,49 @@
             }
         }
 
+        function toggleMisaligned() {
+            showMisaligned = !showMisaligned;
+            const btn = document.getElementById('toggleMisalignedBtn');
+            const key = showMisaligned ? 'hideMisaligned' : 'showMisaligned';
+            btn.innerText = translations[currentLang][key];
+            btn.dataset.translateKey = key;
+            renderRankingTable();
+            updateChart();
+        }
+
         function resortTable(type) {
             currentSortType = type;
+            const alignedIdeas = currentIdeas.filter(idea => idea.aiScore >= 50);
+            const misalignedIdeas = currentIdeas.filter(idea => idea.aiScore < 50);
+
             if (type === 'ai') {
-                currentIdeas.sort((a, b) => b.aiScore - a.aiScore);
-            } else {
-                currentIdeas.sort((a, b) => b.manualVotes - a.manualVotes);
+                alignedIdeas.sort((a, b) => b.aiScore - a.aiScore);
+                misalignedIdeas.sort((a, b) => b.aiScore - a.aiScore);
+            } else { // 'manual'
+                alignedIdeas.sort((a, b) => b.manualVotes - a.manualVotes);
+                misalignedIdeas.sort((a, b) => b.manualVotes - a.manualVotes);
             }
+
+            currentIdeas = [...alignedIdeas, ...misalignedIdeas];
+
             renderRankingTable();
             updateChart();
         }
 
         function updateChart() {
             const ctx = document.getElementById('scoreChart').getContext('2d');
-            const chartIdeas = currentIdeas.filter(idea => idea.aiScore > 0);
+            const chartIdeas = showMisaligned ? currentIdeas : currentIdeas.filter(i => i.aiScore >= 50);
+
             const labels = chartIdeas.map(i => i.title);
             const aiScores = chartIdeas.map(i => i.aiScore);
             const manualVotes = chartIdeas.map(i => i.manualVotes);
+            const aiBgColors = chartIdeas.map(i => i.aiScore < 50 ? '#a855f7' : '#3b82f6');
+            const manualBgColors = chartIdeas.map(i => i.aiScore < 50 ? '#3f3f46' : '#1e293b');
 
             if (scoreChart) {
                 scoreChart.destroy();
             }
 
-            // Datasetleri hazırla
             const aiDataset = {
                 label: 'AI Skoru',
                 data: aiScores,
@@ -2342,12 +2395,10 @@
             const manualDataset = {
                 label: 'Kullanıcı Puanı',
                 data: manualVotes,
-                backgroundColor: '#1e293b', // Siyah/Koyu renk korundu
+                backgroundColor: manualBgColors,
                 borderRadius: 8
             };
 
-            // Sıralama tipine göre dataset sırasını değiştir (Sütun yer değişimi)
-            // Eğer manuel sıralama ise Kullanıcı Puanı başa gelir
             const datasets = currentSortType === 'manual' ? [manualDataset, aiDataset] : [aiDataset, manualDataset];
 
             scoreChart = new Chart(ctx, {
@@ -2426,7 +2477,7 @@
                         .replace('{analysis}', idea.aiAnalysis.replace(/<[^>]*>?/gm, ' '))
                         .replace('{question}', escapeHtml(question));
                     try {
-                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`, {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -2514,7 +2565,7 @@
                                                       <div class="flex justify-between items-center mb-4">
                                                           <div class="relevance-badge italic">${translations[lang].aiReportBadge}</div>
                                                           <div class="flex gap-2 items-center">
-                                                              <div class="text-[10px] font-bold text-blue-600 px-3 py-1 bg-blue-50 rounded-lg">${translations[lang].aiScoreLabel} ${item.aiScore}</div>
+                                                              <div class="text-[10px] font-bold ${item.aiScore < 50 ? 'text-purple-600 bg-purple-100' : 'text-blue-600 bg-blue-50'} px-3 py-1 rounded-lg">${translations[lang].aiScoreLabel} ${item.aiScore}</div>
                                                               <button onclick="deleteIdea('${item.id}')" class="text-[10px] font-bold text-rose-600 px-2 py-1 bg-rose-50 hover:bg-rose-100 rounded-lg no-print transition-colors">${translations[lang].delete}</button>
                                                           </div>
                                                       </div>
@@ -2668,7 +2719,7 @@
             resultsContainer.innerHTML = ''; // Önce temizle
             currentIdeas.forEach(item => {
                 const card = document.createElement('div');
-                card.className = `idea-card animate-pop w-full mx-auto ${item.aiScore === 0 ? 'misaligned-card' : ''}`;
+                card.className = `idea-card animate-pop w-full mx-auto ${item.aiScore < 50 ? 'misaligned-card' : ''}`;
                 card.id = item.id;
                 card.innerHTML = renderCardHtml(item);
                 resultsContainer.appendChild(card);
