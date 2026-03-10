@@ -321,7 +321,7 @@
                                 <th data-translate-key="userAction"
                                     class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center no-print">
                                     Kullanıcı İşlemi</th>
-                                <th data-translate-key="userScore" 
+                                <th data-translate-key="userScore"
                                     class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
                                     Kullanıcı Puanı</th>
                             </tr>
@@ -333,7 +333,8 @@
                 </div>
                 <div class="p-4 flex justify-end no-print border-t border-slate-100">
                     <button id="toggleMisalignedBtn" onclick="toggleMisaligned()" data-translate-key="showMisaligned"
-                        class="hidden text-[10px] font-black text-purple-600 uppercase hover:underline">Uyumsuz Fikirleri
+                        class="hidden text-[10px] font-black text-purple-600 uppercase hover:underline">Uyumsuz
+                        Fikirleri
                         Göster</button>
                 </div>
                 <div class="bg-slate-50 p-4 text-center no-print border-t border-slate-100 flex justify-center gap-4">
@@ -582,6 +583,41 @@
                 <button onclick="showLoginForm()" data-translate-key="backToLogin"
                     class="text-xs font-bold text-slate-500 hover:text-blue-600">Giriş ekranına dön</button>
             </div>
+
+            <div class="relative mt-8 pt-6 border-t border-slate-100">
+                <button onclick="toggleLanguageMenuAuth()"
+                    class="mx-auto text-slate-400 hover:text-blue-600 transition-colors p-2 rounded-full hover:bg-slate-50 flex items-center gap-2 text-xs font-bold">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span data-translate-key="changeLanguage">Dil Değiştir</span>
+                </button>
+                <div id="languageMenuAuth"
+                    class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-32 bg-white rounded-xl shadow-xl border border-slate-100 hidden z-50 overflow-hidden animate-pop">
+                    <button id="btn-lang-auth-tr" onclick="setLanguage('tr'); toggleLanguageMenuAuth()"
+                        class="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2">
+                        <span>🇹🇷</span> Türkçe
+                    </button>
+                    <button id="btn-lang-auth-en" onclick="setLanguage('en'); toggleLanguageMenuAuth()"
+                        class="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2">
+                        <span>🇬🇧</span> English
+                    </button>
+                    <button id="btn-lang-auth-de" onclick="setLanguage('de'); toggleLanguageMenuAuth()"
+                        class="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2">
+                        <span>🇩🇪</span> Deutsch
+                    </button>
+                    <button id="btn-lang-auth-es" onclick="setLanguage('es'); toggleLanguageMenuAuth()"
+                        class="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2">
+                        <span>🇪🇸</span> Español
+                    </button>
+                    <button id="btn-lang-auth-fr" onclick="setLanguage('fr'); toggleLanguageMenuAuth()"
+                        class="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2">
+                        <span>🇫🇷</span> Français
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -672,6 +708,7 @@
                 inResponseTo: "In response to",
                 errorIdeaNotFound: "Sorry, this idea cannot be found. Please refresh the page and try again.",
                 summary: "Summary",
+                changeLanguage: "Change Language",
                 errorCredentials: "Invalid username or password.",
                 errorUserExists: "This username is already taken.",
                 errorFieldEmpty: "All fields are required.",
@@ -841,6 +878,7 @@
                 inResponseTo: "sorusuna istinaden:",
                 errorIdeaNotFound: "Üzgünüm, bu fikir bulunamıyor. Lütfen sayfayı yenileyip tekrar deneyin.",
                 simThemes: ["stratejik bir kaldıraç etkisi yaratabilir.", "uzun vadeli sürdürülebilirlik açısından kritik öneme sahip.", "mevcut operasyonel verimliliği artırma potansiyeli taşıyor.", "hedefine doğrudan hizmet eden inovatif bir yaklaşım.", "uygulama kolaylığı ve düşük maliyeti ile ön plana çıkıyor."],
+                changeLanguage: "Dil Değiştir",
                 errorCredentials: "Geçersiz kullanıcı adı veya şifre.",
                 errorUserExists: "Bu kullanıcı adı zaten alınmış.",
                 errorFieldEmpty: "Tüm alanlar zorunludur.",
@@ -992,6 +1030,7 @@
                 inResponseTo: "als Antwort auf:",
                 errorIdeaNotFound: "Entschuldigung, diese Idee kann nicht gefunden werden. Bitte aktualisieren Sie die Seite und versuchen Sie es erneut.",
                 summary: "Zusammenfassung",
+                changeLanguage: "Sprache ändern",
                 errorCredentials: "Ungültiger Benutzername oder Passwort.",
                 errorUserExists: "Dieser Benutzername ist bereits vergeben.",
                 errorFieldEmpty: "Alle Felder sind erforderlich.",
@@ -1161,6 +1200,7 @@
                 inResponseTo: "en respuesta a:",
                 errorIdeaNotFound: "Lo siento, no se puede encontrar esta idea. Por favor actualice la página e intente de nuevo.",
                 summary: "Resumen",
+                changeLanguage: "Cambiar Idioma",
                 errorCredentials: "Nombre de usuario o contraseña inválidos.",
                 errorUserExists: "Este nombre de usuario ya está en uso.",
                 errorFieldEmpty: "Todos los campos son obligatorios.",
@@ -1330,6 +1370,7 @@
                 inResponseTo: "en réponse à :",
                 errorIdeaNotFound: "Désolé, cette idée est introuvable. Veuillez actualiser la page et réessayer.",
                 summary: "Résumé",
+                changeLanguage: "Changer de Langue",
                 errorCredentials: "Nom d'utilisateur ou mot de passe invalide.",
                 errorUserExists: "Ce nom d'utilisateur est déjà pris.",
                 errorFieldEmpty: "Tous les champs sont obligatoires.",
@@ -1740,12 +1781,23 @@
             menu.classList.toggle('hidden');
         }
 
+        function toggleLanguageMenuAuth() {
+            const menu = document.getElementById('languageMenuAuth');
+            menu.classList.toggle('hidden');
+        }
+
         // Menü dışına tıklanınca kapat
         window.addEventListener('click', function (e) {
             const menu = document.getElementById('languageMenu');
             const btn = document.querySelector('button[onclick="toggleLanguageMenu()"]');
             if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
                 menu.classList.add('hidden');
+            }
+
+            const authMenu = document.getElementById('languageMenuAuth');
+            const authBtn = document.querySelector('button[onclick="toggleLanguageMenuAuth()"]');
+            if (authMenu && !authMenu.classList.contains('hidden') && !authMenu.contains(e.target) && (!authBtn || !authBtn.contains(e.target))) {
+                authMenu.classList.add('hidden');
             }
         });
 
@@ -1758,18 +1810,24 @@
                 console.warn('Could not save language preference.');
             }
 
-            // Menüdeki aktif dili vurgula (Dinamik)
-            const menu = document.getElementById('languageMenu');
-            const buttons = menu.querySelectorAll('button');
-            buttons.forEach(btn => {
-                btn.className = "w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2";
-            });
+            const updateMenuUI = (menuId, prefix) => {
+                const menu = document.getElementById(menuId);
+                if (!menu) return;
 
-            const activeBtn = document.getElementById(`btn-lang-${lang}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('text-slate-600');
-                activeBtn.classList.add('text-blue-600', 'bg-blue-50');
-            }
+                const buttons = menu.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    btn.className = "w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2";
+                });
+
+                const activeBtn = document.getElementById(`${prefix}${lang}`);
+                if (activeBtn) {
+                    activeBtn.classList.remove('text-slate-600');
+                    activeBtn.classList.add('text-blue-600', 'bg-blue-50');
+                }
+            };
+
+            updateMenuUI('languageMenu', 'btn-lang-');
+            updateMenuUI('languageMenuAuth', 'btn-lang-auth-');
 
             // Update all elements with data-translate-key
             document.querySelectorAll('[data-translate-key]').forEach(el => {
@@ -1946,7 +2004,7 @@
             let recommendation;
             let pros, cons;
 
-            if (isMisaligned) { 
+            if (isMisaligned) {
                 aiScore = 1 + (seed % 49); // 1-49 aralığında
                 summary = translations[lang].misalignedSummary.replace('{purpose}', purpose);
                 pros = [];
@@ -2661,9 +2719,9 @@
             // butonları geri getir
             const addBtn = document.getElementById('addIdeaBtn');
             if (addBtn) addBtn.style.display = '';
-            // analiz sonrası düğmesi de mutlaka görülsün
+            // analiz sonrası düğmesini gizle, çünkü sıfırlandı
             const afterBtn = document.getElementById('addAfterBtn');
-            if (afterBtn) afterBtn.classList.remove('hidden');
+            if (afterBtn) afterBtn.classList.add('hidden');
 
             saveUserData();
         }
